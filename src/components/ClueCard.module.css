@@ -1,0 +1,186 @@
+.clueCard {
+  background: #1a1a2e;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.4s ease;
+}
+
+.clueCard.latest {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.clueCard.previous {
+  opacity: 0.55;
+  transform: scale(0.97);
+}
+
+.clueHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 10px;
+}
+
+.clueChip {
+  background: rgba(99, 102, 241, 0.25);
+  color: #818cf8;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.usedChip {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+/* Photo clue */
+.photoWrapper {
+  position: relative;
+}
+
+.imageSkeleton {
+  width: 100%;
+  height: 260px;
+  background: linear-gradient(90deg, #1a1a2e 0%, #252545 50%, #1a1a2e 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.clueImage {
+  display: block;
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.clueImage.visible {
+  opacity: 1;
+}
+
+.attribution {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 12px;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+}
+
+/* Fact clue */
+.factCard {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 180px;
+  justify-content: center;
+}
+
+.factIcon {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.factText {
+  color: #e2e8f0;
+  font-size: 16px;
+  line-height: 1.6;
+  text-align: center;
+  margin: 0;
+}
+
+/* Stat clue */
+.statCard {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  min-height: 180px;
+  justify-content: center;
+}
+
+.statGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.statLabel {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+}
+
+.statValue {
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Flag clue */
+.flagCard {
+  padding: 24px 20px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flagLabel {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  margin: 0;
+}
+
+.colorStrips {
+  display: flex;
+  height: 80px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.colorStrip {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+}
+
+.colorName {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}

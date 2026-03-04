@@ -1,0 +1,24 @@
+/* App-level shell — mobile-first, full viewport height */
+.app-shell {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d1a;
+  overflow: hidden;
+}
+
+/* Centered scrollable container for intro screen */
+.scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px 40px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.scroll-container::-webkit-scrollbar {
+  width: 0;
+}
