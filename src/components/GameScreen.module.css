@@ -1,107 +1,152 @@
 .screen {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  position: relative;
   width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0d0d1a;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* ── Instagram story progress bar ─────────────── */
+.progressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  padding: 10px 12px 0;
+  box-sizing: border-box;
+}
+
+.progressSegment {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
   overflow: hidden;
 }
 
-.header {
+.progressFill {
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Top overlay (label + give-up) ───────────── */
+.topOverlay {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  flex-shrink: 0;
-  background: #0d0d1a;
-  z-index: 10;
-  max-width: 430px;
-  width: 100%;
-  margin: 0 auto;
+  padding: 0 14px;
   box-sizing: border-box;
 }
 
-.headerLeft {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logoText {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+.clueBadge {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
   font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.clueProgress {
-  display: flex;
-  gap: 5px;
-  align-items: center;
+.giveUpBtn {
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgba(239, 68, 68, 0.8);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
 }
 
-.pip {
-  width: 28px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.12);
-  transition: all 0.3s ease;
+.giveUpBtn:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 
-.pipActive {
-  background: rgba(99, 102, 241, 0.7);
+.giveUpBtn:disabled {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.pipWon {
-  background: rgba(52, 211, 153, 0.8) !important;
+/* ── Full-screen slide container ─────────────── */
+.slideStack {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
-.pipLost {
-  background: rgba(239, 68, 68, 0.5) !important;
-}
-
-/* Scrollable feed */
-.feed {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 20px 60px;
+/* ── Bottom answer overlay ───────────────────── */
+.bottomOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 0 16px 28px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  scroll-behavior: smooth;
-  max-width: 430px;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-
-.feed::-webkit-scrollbar {
-  width: 0;
+  gap: 10px;
 }
 
 .question {
-  text-align: center;
-  padding: 10px 0;
-}
-
-.questionText {
-  color: #f1f5f9;
-  font-size: 22px;
-  font-weight: 800;
-  margin: 0 0 6px;
-}
-
-.questionSub {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  font-weight: 700;
   margin: 0;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
-.clues {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.swipeHint {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  letter-spacing: 0.03em;
 }
 
-.inputArea {
-  margin-top: 4px;
+/* ── Result overlay (slides up from bottom) ─── */
+.resultOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow-y: auto;
+  background: rgba(13, 13, 26, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: slideUpResult 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  padding: 60px 20px 40px;
+  box-sizing: border-box;
+}
+
+.resultOverlay::-webkit-scrollbar {
+  width: 0;
+}
+
+@keyframes slideUpResult {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }

@@ -27,13 +27,13 @@ export default function App() {
         country={game.country}
         phase={game.phase}
         currentClueIndex={game.currentClueIndex}
-        guess={game.guess}
-        setGuess={game.setGuess}
-        wrongGuesses={game.wrongGuesses}
+        choices={game.choices}
+        selectedChoice={game.selectedChoice}
+        wrongChoices={game.wrongChoices}
         score={game.score}
         streak={game.streak}
         maxClues={game.maxClues}
-        onSubmit={game.submitGuess}
+        onSelectChoice={game.selectChoice}
         onGiveUp={game.giveUp}
         onRevealNext={game.revealNextClue}
         onNext={game.nextGame}
