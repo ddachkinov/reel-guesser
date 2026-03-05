@@ -1,0 +1,22 @@
+.pop {
+  position: absolute;
+  bottom: 220px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  color: #6ee7b7;
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  text-shadow: 0 2px 20px rgba(52, 211, 153, 0.6), 0 0 40px rgba(52, 211, 153, 0.3);
+  pointer-events: none;
+  white-space: nowrap;
+  animation: floatUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes floatUp {
+  0%   { opacity: 0;   transform: translateX(-50%) translateY(0)   scale(0.7); }
+  15%  { opacity: 1;   transform: translateX(-50%) translateY(-10px) scale(1.15); }
+  60%  { opacity: 1;   transform: translateX(-50%) translateY(-40px) scale(1); }
+  100% { opacity: 0;   transform: translateX(-50%) translateY(-80px) scale(0.9); }
+}

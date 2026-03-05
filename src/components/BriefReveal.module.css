@@ -1,0 +1,53 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fadeIn 0.3s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: popUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes popUp {
+  from { opacity: 0; transform: scale(0.8) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+.emoji {
+  font-size: 72px;
+  line-height: 1;
+  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.5));
+}
+
+.name {
+  color: #fff;
+  font-size: 34px;
+  font-weight: 900;
+  margin: 0;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.6);
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  margin: 0;
+  font-weight: 500;
+}

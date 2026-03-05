@@ -30,13 +30,16 @@ export default function App() {
         choices={game.choices}
         selectedChoice={game.selectedChoice}
         wrongChoices={game.wrongChoices}
-        score={game.score}
+        lastScore={game.lastScore}
+        showScorePop={game.showScorePop}
+        totalScore={game.totalScore}
         streak={game.streak}
         maxClues={game.maxClues}
         onSelectChoice={game.selectChoice}
         onGiveUp={game.giveUp}
         onRevealNext={game.revealNextClue}
-        onNext={game.nextGame}
+        advanceAfterReveal={game.advanceAfterReveal}
+        continueAfterBreak={game.continueAfterBreak}
       />
     </div>
   );

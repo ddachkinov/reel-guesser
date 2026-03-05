@@ -35,7 +35,7 @@
   background: rgba(255, 255, 255, 0.9);
 }
 
-/* ── Top overlay (label + give-up) ───────────── */
+/* ── Top HUD ──────────────────────────────────── */
 .topOverlay {
   position: absolute;
   top: 22px;
@@ -49,6 +49,18 @@
   box-sizing: border-box;
 }
 
+.hudLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hudRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .clueBadge {
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
@@ -59,6 +71,39 @@
   padding: 5px 12px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.streakBadge {
+  background: rgba(251, 146, 60, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fb923c;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.scoreBadge {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #a5b4fc;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  min-width: 52px;
+  text-align: center;
+  transition: color 0.3s;
 }
 
 .giveUpBtn {
@@ -78,11 +123,6 @@
 
 .giveUpBtn:hover {
   background: rgba(239, 68, 68, 0.15);
-}
-
-.giveUpBtn:disabled {
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* ── Full-screen slide container ─────────────── */
@@ -128,25 +168,3 @@
   letter-spacing: 0.03em;
 }
 
-/* ── Result overlay (slides up from bottom) ─── */
-.resultOverlay {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  overflow-y: auto;
-  background: rgba(13, 13, 26, 0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: slideUpResult 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  padding: 60px 20px 40px;
-  box-sizing: border-box;
-}
-
-.resultOverlay::-webkit-scrollbar {
-  width: 0;
-}
-
-@keyframes slideUpResult {
-  from { transform: translateY(100%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}

@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ReelSlide } from "./ReelSlide";
 import { AnswerButtons } from "./AnswerButtons";
-import { ResultScreen } from "./ResultScreen";
+import { ScorePop } from "./ScorePop";
+import { BriefReveal } from "./BriefReveal";
+import { MilestoneBurst } from "./MilestoneBurst";
+import { GaveUpOverlay } from "./GaveUpOverlay";
 import { useSwipe } from "../hooks/useSwipe";
 import { PHASE } from "../hooks/useGameState";
 import styles from "./GameScreen.module.css";
+
+// Auto-advance delay after correct answer (ms)
+const REVEAL_DURATION = 1800;
 
 export function GameScreen({
   country,
@@ -13,19 +19,21 @@ export function GameScreen({
   choices,
   selectedChoice,
   wrongChoices,
-  score,
+  lastScore,
+  showScorePop,
+  totalScore,
   streak,
   maxClues,
   onSelectChoice,
   onRevealNext,
   onGiveUp,
-  onNext,
+  advanceAfterReveal,
+  continueAfterBreak,
 }) {
   const [prevClueIndex, setPrevClueIndex] = useState(currentClueIndex);
   const [transitioning, setTransitioning] = useState(false);
-  const isOver = phase === PHASE.CORRECT || phase === PHASE.GAVE_UP;
 
-  // Detect clue index changes → trigger slide transition
+  // Slide transition on clue change
   useEffect(() => {
     if (currentClueIndex !== prevClueIndex) {
       setTransitioning(true);
@@ -37,7 +45,16 @@ export function GameScreen({
     }
   }, [currentClueIndex, prevClueIndex]);
 
-  const canGoNext = currentClueIndex < maxClues - 1 && !isOver;
+  // Auto-advance after brief reveal
+  useEffect(() => {
+    if (phase === PHASE.REVEALING) {
+      const t = setTimeout(advanceAfterReveal, REVEAL_DURATION);
+      return () => clearTimeout(t);
+    }
+  }, [phase, advanceAfterReveal]);
+
+  const isPlaying = phase === PHASE.PLAYING;
+  const canGoNext = currentClueIndex < maxClues - 1 && isPlaying;
 
   const swipeHandlers = useSwipe({
     onSwipeUp: canGoNext ? onRevealNext : undefined,
@@ -48,47 +65,49 @@ export function GameScreen({
 
   return (
     <div className={styles.screen} {...swipeHandlers}>
-      {/* Instagram-style story progress bar */}
+      {/* Story progress bar */}
       <div className={styles.progressBar}>
         {Array(maxClues).fill(null).map((_, i) => (
           <div key={i} className={styles.progressSegment}>
             <div
               className={styles.progressFill}
               style={{
-                width: i < currentClueIndex ? "100%"
-                     : i === currentClueIndex ? "100%"
-                     : "0%",
-                background: isOver && phase === PHASE.CORRECT
-                  ? "rgba(52, 211, 153, 0.9)"
-                  : isOver
-                  ? "rgba(239, 68, 68, 0.6)"
-                  : "rgba(255,255,255,0.9)",
-                transition: i === currentClueIndex && !isOver
-                  ? "none"
-                  : "width 0s",
+                width: i <= currentClueIndex ? "100%" : "0%",
+                background:
+                  phase === PHASE.REVEALING || phase === PHASE.MILESTONE
+                    ? "rgba(52, 211, 153, 0.9)"
+                    : phase === PHASE.GAVE_UP
+                    ? "rgba(239, 68, 68, 0.6)"
+                    : "rgba(255,255,255,0.9)",
               }}
             />
           </div>
         ))}
       </div>
 
-      {/* Clue label top-left */}
+      {/* Top HUD */}
       <div className={styles.topOverlay}>
-        <span className={styles.clueBadge}>
-          Clue {currentClueIndex + 1} of {maxClues}
-        </span>
-        <button className={styles.giveUpBtn} onClick={onGiveUp} disabled={isOver}>
-          Give up
-        </button>
+        <div className={styles.hudLeft}>
+          <span className={styles.clueBadge}>Clue {currentClueIndex + 1}/{maxClues}</span>
+          {streak >= 2 && (
+            <span className={styles.streakBadge}>🔥 {streak}</span>
+          )}
+        </div>
+        <div className={styles.hudRight}>
+          <span className={styles.scoreBadge}>{totalScore.toLocaleString()}</span>
+          {isPlaying && (
+            <button className={styles.giveUpBtn} onClick={onGiveUp}>
+              Give up
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Full-screen slide stack */}
       <div className={styles.slideStack}>
-        {/* Previous slide — exits upward */}
         {transitioning && prevClue && prevClue !== currentClue && (
           <ReelSlide clue={prevClue} isExiting direction="up" />
         )}
-        {/* Current slide — enters from below */}
         <ReelSlide
           clue={currentClue}
           isEntering={transitioning}
@@ -96,8 +115,13 @@ export function GameScreen({
         />
       </div>
 
-      {/* Bottom overlay — question + answers */}
-      {!isOver && (
+      {/* Score pop (floats up on correct) */}
+      {showScorePop && lastScore && (
+        <ScorePop score={lastScore} onDone={() => {}} />
+      )}
+
+      {/* Bottom answer area — only while actively playing */}
+      {isPlaying && (
         <div className={styles.bottomOverlay}>
           <p className={styles.question}>Which country is this?</p>
           {canGoNext && (
@@ -111,23 +135,28 @@ export function GameScreen({
             wrongChoices={wrongChoices}
             correctId={country.id}
             onSelect={onSelectChoice}
-            revealed={phase === PHASE.CORRECT}
+            revealed={false}
           />
         </div>
       )}
 
-      {/* Result screen slides up after correct/give-up */}
-      {isOver && (
-        <div className={styles.resultOverlay}>
-          <ResultScreen
-            country={country}
-            score={score}
-            cluesUsed={currentClueIndex + 1}
-            won={phase === PHASE.CORRECT}
-            onNext={onNext}
-            streak={streak}
-          />
-        </div>
+      {/* Brief country reveal (2s, auto-advances) */}
+      {phase === PHASE.REVEALING && (
+        <BriefReveal country={country} />
+      )}
+
+      {/* Milestone burst — tap to continue */}
+      {phase === PHASE.MILESTONE && (
+        <MilestoneBurst
+          streak={streak}
+          totalScore={totalScore}
+          onContinue={continueAfterBreak}
+        />
+      )}
+
+      {/* Gave up overlay — tap to continue */}
+      {phase === PHASE.GAVE_UP && (
+        <GaveUpOverlay country={country} onNext={continueAfterBreak} />
       )}
     </div>
   );

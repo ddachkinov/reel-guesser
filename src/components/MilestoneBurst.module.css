@@ -1,0 +1,121 @@
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 13, 26, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: fadeIn 0.35s ease forwards;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Pulsing rings behind the icon */
+.burst, .ring, .ring2 {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ring {
+  width: 260px;
+  height: 260px;
+  border: 2px solid rgba(99, 102, 241, 0.25);
+  animation: expandRing 1.8s ease-out infinite;
+}
+
+.ring2 {
+  width: 260px;
+  height: 260px;
+  border: 2px solid rgba(99, 102, 241, 0.15);
+  animation: expandRing 1.8s ease-out 0.6s infinite;
+}
+
+@keyframes expandRing {
+  0%   { transform: translate(-50%, -50%) scale(0.6); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 0 32px;
+  animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.75) translateY(20px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.icon {
+  font-size: 80px;
+  line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(255,255,255,0.3));
+}
+
+.headline {
+  color: #fff;
+  font-size: 36px;
+  font-weight: 900;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.sub {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.scoreRow {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.scoreLabel {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.scoreNum {
+  color: #a5b4fc;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.tap {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 13px;
+  margin: 8px 0 0;
+  animation: blink 1.6s ease infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.7; }
+}
