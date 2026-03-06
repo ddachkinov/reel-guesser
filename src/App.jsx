@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useGameState, PHASE } from "./hooks/useGameState";
 import { IntroScreen } from "./components/IntroScreen";
 import { GameScreen } from "./components/GameScreen";
@@ -5,6 +6,7 @@ import "./App.css";
 
 export default function App() {
   const game = useGameState();
+  const [autoAdvance, setAutoAdvance] = useState(true);
 
   if (game.phase === PHASE.INTRO || !game.country) {
     return (
@@ -15,6 +17,8 @@ export default function App() {
             totalScore={game.totalScore}
             gamesPlayed={game.gamesPlayed}
             streak={game.streak}
+            autoAdvance={autoAdvance}
+            onToggleAutoAdvance={() => setAutoAdvance((v) => !v)}
           />
         </div>
       </div>
@@ -26,20 +30,18 @@ export default function App() {
       <GameScreen
         country={game.country}
         phase={game.phase}
-        currentClueIndex={game.currentClueIndex}
-        choices={game.choices}
-        selectedChoice={game.selectedChoice}
-        wrongChoices={game.wrongChoices}
+        frameIndex={game.frameIndex}
         lastScore={game.lastScore}
+        lastDistanceKm={game.lastDistanceKm}
         showScorePop={game.showScorePop}
         totalScore={game.totalScore}
         streak={game.streak}
-        maxClues={game.maxClues}
-        onSelectChoice={game.selectChoice}
-        onGiveUp={game.giveUp}
-        onRevealNext={game.revealNextClue}
-        advanceAfterReveal={game.advanceAfterReveal}
-        continueAfterBreak={game.continueAfterBreak}
+        autoAdvance={autoAdvance}
+        nextFrame={game.nextFrame}
+        prevFrame={game.prevFrame}
+        submitMapGuess={game.submitMapGuess}
+        skipCountry={game.skipCountry}
+        advance={game.advance}
       />
     </div>
   );

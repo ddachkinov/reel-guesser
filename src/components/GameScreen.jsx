@@ -1,162 +1,200 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ReelSlide } from "./ReelSlide";
-import { AnswerButtons } from "./AnswerButtons";
+import { MapSlide } from "./MapSlide";
 import { ScorePop } from "./ScorePop";
 import { BriefReveal } from "./BriefReveal";
 import { MilestoneBurst } from "./MilestoneBurst";
 import { GaveUpOverlay } from "./GaveUpOverlay";
 import { useSwipe } from "../hooks/useSwipe";
-import { PHASE } from "../hooks/useGameState";
+import { PHASE, FRAME, MAX_FRAMES } from "../hooks/useGameState";
 import styles from "./GameScreen.module.css";
 
-// Auto-advance delay after correct answer (ms)
-const REVEAL_DURATION = 1800;
+const AUTO_ADVANCE_DELAY = 2200;
 
 export function GameScreen({
   country,
   phase,
-  currentClueIndex,
-  choices,
-  selectedChoice,
-  wrongChoices,
+  frameIndex,
   lastScore,
+  lastDistanceKm,
   showScorePop,
   totalScore,
   streak,
-  maxClues,
-  onSelectChoice,
-  onRevealNext,
-  onGiveUp,
-  advanceAfterReveal,
-  continueAfterBreak,
+  autoAdvance,
+  nextFrame,
+  prevFrame,
+  submitMapGuess,
+  skipCountry,
+  advance,
 }) {
-  const [prevClueIndex, setPrevClueIndex] = useState(currentClueIndex);
+  const [prevFrameIndex, setPrevFrameIndex] = useState(frameIndex);
+  const [slideDir, setSlideDir] = useState("left");
   const [transitioning, setTransitioning] = useState(false);
-
-  // Slide transition on clue change
-  useEffect(() => {
-    if (currentClueIndex !== prevClueIndex) {
-      setTransitioning(true);
-      const t = setTimeout(() => {
-        setPrevClueIndex(currentClueIndex);
-        setTransitioning(false);
-      }, 400);
-      return () => clearTimeout(t);
-    }
-  }, [currentClueIndex, prevClueIndex]);
-
-  // Auto-advance after brief reveal
-  useEffect(() => {
-    if (phase === PHASE.REVEALING) {
-      const t = setTimeout(advanceAfterReveal, REVEAL_DURATION);
-      return () => clearTimeout(t);
-    }
-  }, [phase, advanceAfterReveal]);
+  const [bouncing, setBouncing] = useState(false);
 
   const isPlaying = phase === PHASE.PLAYING;
-  const canGoNext = currentClueIndex < maxClues - 1 && isPlaying;
+  const isOnMap = frameIndex === FRAME.MAP;
 
-  const swipeHandlers = useSwipe({
-    onSwipeUp: canGoNext ? onRevealNext : undefined,
-  });
+  // Horizontal slide transition on frame change
+  useEffect(() => {
+    if (frameIndex !== prevFrameIndex) {
+      setSlideDir(frameIndex > prevFrameIndex ? "left" : "right");
+      setTransitioning(true);
+      const t = setTimeout(() => {
+        setPrevFrameIndex(frameIndex);
+        setTransitioning(false);
+      }, 360);
+      return () => clearTimeout(t);
+    }
+  }, [frameIndex, prevFrameIndex]);
 
-  const currentClue = country.clues[currentClueIndex];
-  const prevClue = country.clues[prevClueIndex];
+  // Auto-advance or bounce hint after reveal
+  useEffect(() => {
+    if (phase === PHASE.REVEALING) {
+      if (autoAdvance) {
+        const t = setTimeout(advance, AUTO_ADVANCE_DELAY);
+        return () => clearTimeout(t);
+      }
+      const t = setTimeout(() => setBouncing(true), 700);
+      return () => clearTimeout(t);
+    }
+    setBouncing(false);
+  }, [phase, autoAdvance, advance]);
+
+  const goNext = useCallback(() => {
+    if (isPlaying && frameIndex < MAX_FRAMES - 1) nextFrame();
+  }, [isPlaying, frameIndex, nextFrame]);
+
+  const goBack = useCallback(() => {
+    if (isPlaying && frameIndex > 0) prevFrame();
+  }, [isPlaying, frameIndex, prevFrame]);
+
+  // Swipe gestures only active on non-map frames
+  const swipeHandlers = useSwipe(
+    !isOnMap && isPlaying
+      ? { onSwipeLeft: goNext, onSwipeRight: goBack, onSwipeUp: skipCountry }
+      : {}
+  );
+
+  function renderFrame(idx, entering, exiting) {
+    const animClass = exiting
+      ? (slideDir === "left" ? styles.exitLeft : styles.exitRight)
+      : entering
+      ? (slideDir === "left" ? styles.enterRight : styles.enterLeft)
+      : styles.visible;
+
+    if (idx === FRAME.MAP) {
+      return (
+        <div key="map" className={`${styles.slide} ${animClass}`}>
+          <MapSlide
+            country={country}
+            onScore={(lat, lng) => {
+              if (lat === null) { skipCountry(); return; }
+              submitMapGuess(lat, lng);
+            }}
+            isActive={frameIndex === FRAME.MAP && !transitioning}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div key={idx} className={`${styles.slide} ${animClass}`}>
+        <ReelSlide clue={country.clues[idx]} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.screen} {...swipeHandlers}>
-      {/* Story progress bar */}
+
+      {/* Story progress segments */}
       <div className={styles.progressBar}>
-        {Array(maxClues).fill(null).map((_, i) => (
-          <div key={i} className={styles.progressSegment}>
-            <div
-              className={styles.progressFill}
-              style={{
-                width: i <= currentClueIndex ? "100%" : "0%",
-                background:
-                  phase === PHASE.REVEALING || phase === PHASE.MILESTONE
-                    ? "rgba(52, 211, 153, 0.9)"
-                    : phase === PHASE.GAVE_UP
-                    ? "rgba(239, 68, 68, 0.6)"
-                    : "rgba(255,255,255,0.9)",
-              }}
-            />
-          </div>
-        ))}
+        {Array(MAX_FRAMES).fill(null).map((_, i) => {
+          const filled = i <= frameIndex;
+          const won = phase === PHASE.REVEALING || phase === PHASE.MILESTONE;
+          const skipped = phase === PHASE.SKIPPED;
+          return (
+            <div key={i} className={styles.segment}>
+              <div
+                className={styles.segFill}
+                style={{
+                  width: filled ? "100%" : "0%",
+                  background:
+                    won && filled ? "rgba(52,211,153,0.9)" :
+                    skipped && filled ? "rgba(239,68,68,0.5)" :
+                    "rgba(255,255,255,0.9)",
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
 
-      {/* Top HUD */}
-      <div className={styles.topOverlay}>
+      {/* HUD */}
+      <div className={styles.hud}>
         <div className={styles.hudLeft}>
-          <span className={styles.clueBadge}>Clue {currentClueIndex + 1}/{maxClues}</span>
           {streak >= 2 && (
-            <span className={styles.streakBadge}>🔥 {streak}</span>
+            <span key={streak} className={styles.streakBadge}>🔥 {streak}</span>
           )}
         </div>
         <div className={styles.hudRight}>
           <span className={styles.scoreBadge}>{totalScore.toLocaleString()}</span>
-          {isPlaying && (
-            <button className={styles.giveUpBtn} onClick={onGiveUp}>
-              Give up
-            </button>
+          {isPlaying && !isOnMap && (
+            <button className={styles.skipHudBtn} onClick={skipCountry}>Skip</button>
           )}
         </div>
       </div>
 
-      {/* Full-screen slide stack */}
+      {/* Frame slides */}
       <div className={styles.slideStack}>
-        {transitioning && prevClue && prevClue !== currentClue && (
-          <ReelSlide clue={prevClue} isExiting direction="up" />
-        )}
-        <ReelSlide
-          clue={currentClue}
-          isEntering={transitioning}
-          direction="up"
-        />
+        {transitioning && renderFrame(prevFrameIndex, false, true)}
+        {renderFrame(frameIndex, transitioning, false)}
       </div>
 
-      {/* Score pop (floats up on correct) */}
-      {showScorePop && lastScore && (
+      {/* Tap zones (clue frames only) */}
+      {isPlaying && !isOnMap && (
+        <div className={styles.tapZones}>
+          <div className={styles.tapLeft} onClick={goBack} />
+          <div className={styles.tapRight} onClick={goNext} />
+        </div>
+      )}
+
+      {/* Bottom frame hint */}
+      {isPlaying && !isOnMap && (
+        <div className={styles.frameHint}>
+          {frameIndex < MAX_FRAMES - 1
+            ? "swipe left for next clue →"
+            : "← back to clues"}
+        </div>
+      )}
+
+      {/* Score pop */}
+      {showScorePop && lastScore != null && (
         <ScorePop score={lastScore} onDone={() => {}} />
       )}
 
-      {/* Bottom answer area — only while actively playing */}
-      {isPlaying && (
-        <div className={styles.bottomOverlay}>
-          <p className={styles.question}>Which country is this?</p>
-          {canGoNext && (
-            <button className={styles.swipeHint} onClick={onRevealNext}>
-              ↑ Swipe for next clue
-            </button>
-          )}
-          <AnswerButtons
-            choices={choices}
-            selectedChoice={selectedChoice}
-            wrongChoices={wrongChoices}
-            correctId={country.id}
-            onSelect={onSelectChoice}
-            revealed={false}
-          />
+      {/* Bounce hint for manual-advance mode */}
+      {bouncing && (
+        <div className={styles.bounceHint} onClick={advance}>
+          <span className={styles.bounceArrow}>↑</span>
+          <span>Swipe or tap for next country</span>
         </div>
       )}
 
-      {/* Brief country reveal (2s, auto-advances) */}
       {phase === PHASE.REVEALING && (
-        <BriefReveal country={country} />
-      )}
-
-      {/* Milestone burst — tap to continue */}
-      {phase === PHASE.MILESTONE && (
-        <MilestoneBurst
-          streak={streak}
-          totalScore={totalScore}
-          onContinue={continueAfterBreak}
+        <BriefReveal
+          country={country}
+          distanceKm={lastDistanceKm}
+          score={lastScore}
+          onTap={!autoAdvance ? advance : undefined}
         />
       )}
-
-      {/* Gave up overlay — tap to continue */}
-      {phase === PHASE.GAVE_UP && (
-        <GaveUpOverlay country={country} onNext={continueAfterBreak} />
+      {phase === PHASE.MILESTONE && (
+        <MilestoneBurst streak={streak} totalScore={totalScore} onContinue={advance} />
+      )}
+      {phase === PHASE.SKIPPED && (
+        <GaveUpOverlay country={country} onNext={advance} />
       )}
     </div>
   );
