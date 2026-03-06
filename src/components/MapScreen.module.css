@@ -1,0 +1,139 @@
+.screen {
+  position: absolute;
+  inset: 0;
+  background: #0d0d1a;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Override Leaflet attribution */
+:global(.leaflet-control-attribution) {
+  font-size: 9px !important;
+  background: rgba(0,0,0,0.45) !important;
+  color: rgba(255,255,255,0.3) !important;
+}
+:global(.leaflet-control-attribution a) {
+  color: rgba(255,255,255,0.4) !important;
+}
+
+/* Gradient so HUD pills stay legible at the top */
+.topFade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Back button — top left, before guessing */
+.backBtn {
+  position: absolute;
+  top: 54px;
+  left: 14px;
+  z-index: 10;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.75);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.backBtn:hover { background: rgba(255,255,255,0.1); }
+
+/* Max score pill — top right */
+.maxScorePill {
+  position: absolute;
+  top: 58px;
+  right: 14px;
+  z-index: 10;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(99,102,241,0.2);
+  color: rgba(255,255,255,0.55);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+.maxScorePill strong {
+  color: #a5b4fc;
+  font-weight: 800;
+}
+
+/* Tap hint — bottom center, before guessing */
+.tapHint {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 11px 22px;
+  border-radius: 24px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: breathe 2.2s ease infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+  50%       { opacity: 1;   transform: translateX(-50%) scale(1.03); }
+}
+
+/* Result bar — slides up from bottom after tap */
+.resultBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 18px 24px 32px;
+  background: rgba(13,13,26,0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: slideUp 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.resultText {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+/* Drop-in keyframe referenced inline by the answer emoji div */
+@keyframes dropIn {
+  from { transform: translate(-50%, -200%); opacity: 0; }
+  to   { transform: translate(-50%, -100%); opacity: 1; }
+}
