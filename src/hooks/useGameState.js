@@ -1,26 +1,27 @@
 import { useState, useCallback } from "react";
-import { getDailyCountry, getRandomCountry } from "../data/countries";
+import { getRandomCountry } from "../data/countries";
 
 export const PHASE = {
   INTRO: "intro",
   PLAYING: "playing",
-  REVEALING: "revealing",   // correct map guess — brief country reveal, then auto/manual advance
-  SKIPPED: "skipped",       // user skipped without guessing
-  MILESTONE: "milestone",   // streak hit 3/5/10/15/20
+  REVEALING: "revealing",
+  SKIPPED: "skipped",
+  MILESTONE: "milestone",
 };
-
-// Frame indices
-export const FRAME = { PHOTO: 0, FACT: 1, MAP: 2 };
-export const MAX_FRAMES = 3;
 
 const MILESTONE_STREAKS = new Set([3, 5, 10, 15, 20]);
 
-// Distance-based scoring: 1000 pts at 0 km, 0 pts at 5000+ km
-export function distanceToScore(km) {
-  return Math.max(0, Math.round(1000 * Math.max(0, 1 - km / 5000)));
+// Each additional clue viewed past the first costs 150 pts from the base.
+// Floor at 400 so there's always a reason to guess.
+export function calcMaxScore(cluesViewed) {
+  return Math.max(400, 1000 - (cluesViewed - 1) * 150);
 }
 
-// Haversine formula — returns distance in km
+// Distance multiplier: 1.0 at 0 km → 0.0 at 5000+ km
+export function distanceFactor(km) {
+  return Math.max(0, 1 - km / 5000);
+}
+
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const toRad = (d) => (d * Math.PI) / 180;
@@ -35,7 +36,10 @@ export function haversine(lat1, lon1, lat2, lon2) {
 export function useGameState() {
   const [country, setCountry] = useState(null);
   const [phase, setPhase] = useState(PHASE.INTRO);
-  const [frameIndex, setFrameIndex] = useState(0);
+  // Index of currently visible clue (wraps)
+  const [clueIndex, setClueIndex] = useState(0);
+  // How many distinct clues the player has actually seen (drives score penalty)
+  const [cluesViewed, setCluesViewed] = useState(1);
   const [lastScore, setLastScore] = useState(null);
   const [lastDistanceKm, setLastDistanceKm] = useState(null);
   const [showScorePop, setShowScorePop] = useState(false);
@@ -53,30 +57,35 @@ export function useGameState() {
   const _load = useCallback((excludeId) => {
     const c = getRandomCountry(excludeId);
     setCountry(c);
-    setFrameIndex(0);
+    setClueIndex(0);
+    setCluesViewed(1);
     setPhase(PHASE.PLAYING);
     setLastScore(null);
     setLastDistanceKm(null);
     setShowScorePop(false);
   }, []);
 
-  const startGame = useCallback(() => {
-    _load(null);
-  }, [_load]);
+  const startGame = useCallback(() => _load(null), [_load]);
 
-  const nextFrame = useCallback(() => {
-    setFrameIndex((i) => Math.min(i + 1, MAX_FRAMES - 1));
-  }, []);
-
-  const prevFrame = useCallback(() => {
-    setFrameIndex((i) => Math.max(i - 1, 0));
-  }, []);
+  // Cycle to next or previous clue; each new clue beyond the first costs points
+  const cycleClue = useCallback((direction) => {
+    setClueIndex((i) => {
+      const len = country?.clues.length ?? 1;
+      return direction === "next"
+        ? (i + 1) % len
+        : (i - 1 + len) % len;
+    });
+    setCluesViewed((v) => {
+      const max = country?.clues.length ?? 1;
+      return Math.min(v + 1, max);
+    });
+  }, [country]);
 
   const submitMapGuess = useCallback((guessLat, guessLng) => {
     if (!country) return;
     const [ansLat, ansLng] = country.mapCenter;
     const km = Math.round(haversine(guessLat, guessLng, ansLat, ansLng));
-    const points = distanceToScore(km);
+    const points = Math.round(calcMaxScore(cluesViewed) * distanceFactor(km));
 
     setLastScore(points);
     setLastDistanceKm(km);
@@ -85,7 +94,6 @@ export function useGameState() {
     const newTotal = totalScore + points;
     const newGames = gamesPlayed + 1;
     const newStreak = points > 0 ? streak + 1 : 0;
-
     setTotalScore(newTotal);
     setGamesPlayed(newGames);
     setStreak(newStreak);
@@ -104,33 +112,29 @@ export function useGameState() {
         setPhase(PHASE.REVEALING);
       }
     }, 400);
-  }, [country, totalScore, gamesPlayed, streak]);
+  }, [country, cluesViewed, totalScore, gamesPlayed, streak]);
 
   const skipCountry = useCallback(() => {
-    const newStreak = 0;
-    setStreak(newStreak);
+    setStreak(0);
     setPhase(PHASE.SKIPPED);
     try { localStorage.setItem("rg_streak", "0"); } catch {}
   }, []);
 
-  const advance = useCallback(() => {
-    _load(country?.id);
-  }, [_load, country]);
+  const advance = useCallback(() => _load(country?.id), [_load, country]);
 
   return {
     country,
     phase,
-    frameIndex,
+    clueIndex,
+    cluesViewed,
     lastScore,
     lastDistanceKm,
     showScorePop,
     totalScore,
     gamesPlayed,
     streak,
-    maxFrames: MAX_FRAMES,
     startGame,
-    nextFrame,
-    prevFrame,
+    cycleClue,
     submitMapGuess,
     skipCountry,
     advance,

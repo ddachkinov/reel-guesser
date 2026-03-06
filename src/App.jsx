@@ -30,15 +30,15 @@ export default function App() {
       <GameScreen
         country={game.country}
         phase={game.phase}
-        frameIndex={game.frameIndex}
+        clueIndex={game.clueIndex}
+        cluesViewed={game.cluesViewed}
         lastScore={game.lastScore}
         lastDistanceKm={game.lastDistanceKm}
         showScorePop={game.showScorePop}
         totalScore={game.totalScore}
         streak={game.streak}
         autoAdvance={autoAdvance}
-        nextFrame={game.nextFrame}
-        prevFrame={game.prevFrame}
+        cycleClue={game.cycleClue}
         submitMapGuess={game.submitMapGuess}
         skipCountry={game.skipCountry}
         advance={game.advance}

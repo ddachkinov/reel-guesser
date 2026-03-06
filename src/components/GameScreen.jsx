@@ -1,56 +1,63 @@
 import { useState, useEffect, useCallback } from "react";
 import { ReelSlide } from "./ReelSlide";
-import { MapSlide } from "./MapSlide";
+import { MapSheet } from "./MapSheet";
 import { ScorePop } from "./ScorePop";
 import { BriefReveal } from "./BriefReveal";
 import { MilestoneBurst } from "./MilestoneBurst";
 import { GaveUpOverlay } from "./GaveUpOverlay";
 import { useSwipe } from "../hooks/useSwipe";
-import { PHASE, FRAME, MAX_FRAMES } from "../hooks/useGameState";
+import { PHASE, calcMaxScore } from "../hooks/useGameState";
 import styles from "./GameScreen.module.css";
 
-const AUTO_ADVANCE_DELAY = 2200;
+const AUTO_ADVANCE_DELAY = 2400;
 
 export function GameScreen({
   country,
   phase,
-  frameIndex,
+  clueIndex,
+  cluesViewed,
   lastScore,
   lastDistanceKm,
   showScorePop,
   totalScore,
   streak,
   autoAdvance,
-  nextFrame,
-  prevFrame,
+  cycleClue,
   submitMapGuess,
   skipCountry,
   advance,
 }) {
-  const [prevFrameIndex, setPrevFrameIndex] = useState(frameIndex);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [prevClueIndex, setPrevClueIndex] = useState(clueIndex);
   const [slideDir, setSlideDir] = useState("left");
   const [transitioning, setTransitioning] = useState(false);
   const [bouncing, setBouncing] = useState(false);
 
   const isPlaying = phase === PHASE.PLAYING;
-  const isOnMap = frameIndex === FRAME.MAP;
+  const isOver = phase === PHASE.REVEALING || phase === PHASE.SKIPPED || phase === PHASE.MILESTONE;
+  const maxScore = calcMaxScore(cluesViewed);
 
-  // Horizontal slide transition on frame change
+  // Horizontal slide transition when clue changes
   useEffect(() => {
-    if (frameIndex !== prevFrameIndex) {
-      setSlideDir(frameIndex > prevFrameIndex ? "left" : "right");
+    if (clueIndex !== prevClueIndex) {
+      setSlideDir(
+        // Determine direction based on cycling forward or back
+        // Since clues wrap, check the "short path"
+        clueIndex !== (prevClueIndex + 1) % (country?.clues.length ?? 1) ? "right" : "left"
+      );
       setTransitioning(true);
       const t = setTimeout(() => {
-        setPrevFrameIndex(frameIndex);
+        setPrevClueIndex(clueIndex);
         setTransitioning(false);
-      }, 360);
+      }, 340);
       return () => clearTimeout(t);
     }
-  }, [frameIndex, prevFrameIndex]);
+  }, [clueIndex, prevClueIndex, country]);
 
-  // Auto-advance or bounce hint after reveal
+  // Auto-advance after reveal
   useEffect(() => {
     if (phase === PHASE.REVEALING) {
+      setMapOpen(false);
       if (autoAdvance) {
         const t = setTimeout(advance, AUTO_ADVANCE_DELAY);
         return () => clearTimeout(t);
@@ -61,42 +68,36 @@ export function GameScreen({
     setBouncing(false);
   }, [phase, autoAdvance, advance]);
 
-  const goNext = useCallback(() => {
-    if (isPlaying && frameIndex < MAX_FRAMES - 1) nextFrame();
-  }, [isPlaying, frameIndex, nextFrame]);
+  // Close map when a new country loads
+  useEffect(() => {
+    setMapOpen(false);
+    setPrevClueIndex(0);
+    setTransitioning(false);
+    setBouncing(false);
+  }, [country?.id]);
 
-  const goBack = useCallback(() => {
-    if (isPlaying && frameIndex > 0) prevFrame();
-  }, [isPlaying, frameIndex, prevFrame]);
+  const openMap = useCallback(() => {
+    if (isPlaying) setMapOpen(true);
+  }, [isPlaying]);
 
-  // Swipe gestures only active on non-map frames
+  const closeMap = useCallback(() => setMapOpen(false), []);
+
   const swipeHandlers = useSwipe(
-    !isOnMap && isPlaying
-      ? { onSwipeLeft: goNext, onSwipeRight: goBack, onSwipeUp: skipCountry }
+    !mapOpen && isPlaying
+      ? {
+          onSwipeLeft: () => cycleClue("next"),
+          onSwipeRight: () => cycleClue("prev"),
+          onSwipeUp: openMap,
+        }
       : {}
   );
 
-  function renderFrame(idx, entering, exiting) {
+  function renderClue(idx, entering, exiting) {
     const animClass = exiting
       ? (slideDir === "left" ? styles.exitLeft : styles.exitRight)
       : entering
       ? (slideDir === "left" ? styles.enterRight : styles.enterLeft)
       : styles.visible;
-
-    if (idx === FRAME.MAP) {
-      return (
-        <div key="map" className={`${styles.slide} ${animClass}`}>
-          <MapSlide
-            country={country}
-            onScore={(lat, lng) => {
-              if (lat === null) { skipCountry(); return; }
-              submitMapGuess(lat, lng);
-            }}
-            isActive={frameIndex === FRAME.MAP && !transitioning}
-          />
-        </div>
-      );
-    }
 
     return (
       <div key={idx} className={`${styles.slide} ${animClass}`}>
@@ -108,66 +109,75 @@ export function GameScreen({
   return (
     <div className={styles.screen} {...swipeHandlers}>
 
-      {/* Story progress segments */}
-      <div className={styles.progressBar}>
-        {Array(MAX_FRAMES).fill(null).map((_, i) => {
-          const filled = i <= frameIndex;
-          const won = phase === PHASE.REVEALING || phase === PHASE.MILESTONE;
-          const skipped = phase === PHASE.SKIPPED;
-          return (
-            <div key={i} className={styles.segment}>
-              <div
-                className={styles.segFill}
-                style={{
-                  width: filled ? "100%" : "0%",
-                  background:
-                    won && filled ? "rgba(52,211,153,0.9)" :
-                    skipped && filled ? "rgba(239,68,68,0.5)" :
-                    "rgba(255,255,255,0.9)",
-                }}
-              />
-            </div>
-          );
-        })}
+      {/* Clue slides — always behind everything else */}
+      <div className={styles.slideStack}>
+        {transitioning && renderClue(prevClueIndex, false, true)}
+        {renderClue(clueIndex, transitioning, false)}
       </div>
 
-      {/* HUD */}
+      {/* Tap zones for cycling clues (only when map is closed and playing) */}
+      {isPlaying && !mapOpen && (
+        <div className={styles.tapZones}>
+          <div className={styles.tapLeft} onClick={() => cycleClue("prev")} />
+          <div className={styles.tapRight} onClick={() => cycleClue("next")} />
+        </div>
+      )}
+
+      {/* Top HUD — progress dots, score, streak */}
       <div className={styles.hud}>
         <div className={styles.hudLeft}>
+          {/* Clue indicator dots */}
+          <div className={styles.clueDots}>
+            {country.clues.map((_, i) => (
+              <span
+                key={i}
+                className={`${styles.dot} ${i === clueIndex ? styles.dotActive : i < cluesViewed ? styles.dotSeen : ""}`}
+              />
+            ))}
+          </div>
+        </div>
+        <div className={styles.hudRight}>
           {streak >= 2 && (
             <span key={streak} className={styles.streakBadge}>🔥 {streak}</span>
           )}
-        </div>
-        <div className={styles.hudRight}>
           <span className={styles.scoreBadge}>{totalScore.toLocaleString()}</span>
-          {isPlaying && !isOnMap && (
-            <button className={styles.skipHudBtn} onClick={skipCountry}>Skip</button>
+        </div>
+      </div>
+
+      {/* Max score indicator — shows penalty for viewing more clues */}
+      {isPlaying && !mapOpen && (
+        <div className={styles.maxScoreBar}>
+          <span className={styles.maxScoreLabel}>Max score</span>
+          <span className={styles.maxScoreValue}>{maxScore} pts</span>
+          {cluesViewed > 1 && (
+            <span className={styles.penaltyNote}>
+              ({cluesViewed - 1} clue{cluesViewed > 2 ? "s" : ""} peeked)
+            </span>
           )}
         </div>
-      </div>
-
-      {/* Frame slides */}
-      <div className={styles.slideStack}>
-        {transitioning && renderFrame(prevFrameIndex, false, true)}
-        {renderFrame(frameIndex, transitioning, false)}
-      </div>
-
-      {/* Tap zones (clue frames only) */}
-      {isPlaying && !isOnMap && (
-        <div className={styles.tapZones}>
-          <div className={styles.tapLeft} onClick={goBack} />
-          <div className={styles.tapRight} onClick={goNext} />
-        </div>
       )}
 
-      {/* Bottom frame hint */}
-      {isPlaying && !isOnMap && (
-        <div className={styles.frameHint}>
-          {frameIndex < MAX_FRAMES - 1
-            ? "swipe left for next clue →"
-            : "← back to clues"}
-        </div>
+      {/* Swipe-up hint */}
+      {isPlaying && !mapOpen && (
+        <button className={styles.guessHint} onClick={openMap}>
+          <span className={styles.guessArrow}>↑</span>
+          Swipe up to guess on map
+        </button>
       )}
+
+      {/* Skip button */}
+      {isPlaying && !mapOpen && (
+        <button className={styles.skipBtn} onClick={skipCountry}>Skip</button>
+      )}
+
+      {/* Map sheet — slides up from bottom */}
+      <MapSheet
+        country={country}
+        maxScore={maxScore}
+        open={mapOpen && isPlaying}
+        onScore={submitMapGuess}
+        onDismiss={closeMap}
+      />
 
       {/* Score pop */}
       {showScorePop && lastScore != null && (
@@ -177,11 +187,12 @@ export function GameScreen({
       {/* Bounce hint for manual-advance mode */}
       {bouncing && (
         <div className={styles.bounceHint} onClick={advance}>
-          <span className={styles.bounceArrow}>↑</span>
-          <span>Swipe or tap for next country</span>
+          <span>↑</span>
+          <span>Swipe for next country</span>
         </div>
       )}
 
+      {/* Post-round overlays */}
       {phase === PHASE.REVEALING && (
         <BriefReveal
           country={country}
