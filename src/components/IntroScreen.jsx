@@ -13,21 +13,15 @@ export function IntroScreen({ onStart, totalScore, gamesPlayed, streak, autoAdva
         <h2 className={styles.howTitle}>How to play</h2>
         <div className={styles.step}>
           <span className={styles.stepNum}>1</span>
-          <p>Swipe left through photo and fact clues about a mystery country</p>
+          <p>Study the photo — tap 💡 to reveal hints (costs points)</p>
         </div>
         <div className={styles.step}>
           <span className={styles.stepNum}>2</span>
-          <p>On the map slide, tap to place your pin as close as you can</p>
+          <p>Swipe left to open the map and tap to pin your guess</p>
         </div>
         <div className={styles.step}>
           <span className={styles.stepNum}>3</span>
-          <p>Score is based on distance — the closer, the better</p>
-        </div>
-        <div className={styles.scoreGuide}>
-          <div className={styles.scoreRow}><span>🎯 Under 500 km</span><span className={styles.pts}>~900 pts</span></div>
-          <div className={styles.scoreRow}><span>🔥 Under 2 000 km</span><span className={styles.pts}>~600 pts</span></div>
-          <div className={styles.scoreRow}><span>👍 Under 4 000 km</span><span className={styles.pts}>~200 pts</span></div>
-          <div className={styles.scoreRow}><span>🌊 5 000+ km off</span><span className={styles.pts}>0 pts</span></div>
+          <p>Score by distance — closer means more points. Swipe up to skip</p>
         </div>
       </div>
 

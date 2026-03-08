@@ -47,7 +47,7 @@ function formatResult(km) {
   return         `${km.toLocaleString()} km — Way off`;
 }
 
-export function MapScreen({ country, maxScore, onScore, onBack }) {
+export function MapScreen({ country, maxScore, onScore, onBack, visible }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const lockedRef = useRef(false);
@@ -64,7 +64,10 @@ export function MapScreen({ country, maxScore, onScore, onBack }) {
       attributionControl: false,
       minZoom: 1,
       maxZoom: 6,
-      worldCopyJump: true,
+      worldCopyJump: false,
+      // Prevent dragging the map off the world edges — snaps back elastically
+      maxBounds: [[-85, -220], [85, 220]],
+      maxBoundsViscosity: 0.85,
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png", {
@@ -117,13 +120,20 @@ export function MapScreen({ country, maxScore, onScore, onBack }) {
       map.remove();
       mapRef.current = null;
     };
-  }, []);                         // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Invalidate size once mounted
+  // Invalidate size once on mount
   useEffect(() => {
     const t = setTimeout(() => mapRef.current?.invalidateSize(), 80);
     return () => clearTimeout(t);
   }, []);
+
+  // Invalidate size whenever the map becomes visible (e.g. after CSS transition)
+  useEffect(() => {
+    if (!visible) return;
+    const t = setTimeout(() => mapRef.current?.invalidateSize(), 50);
+    return () => clearTimeout(t);
+  }, [visible]);
 
   return (
     <div className={styles.screen}>

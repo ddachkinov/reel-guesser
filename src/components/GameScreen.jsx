@@ -30,19 +30,15 @@ export function GameScreen({
   const [view, setView] = useState("clue"); // "clue" | "map"
   const screenRef = useRef(null);
   const [screenHeight, setScreenHeight] = useState(800);
+  const [screenWidth, setScreenWidth] = useState(400);
 
   // Continuous drag offsets
   const [dragY, setDragY] = useState(0);
   const [dragX, setDragX] = useState(0);
 
-  // Slide transition state — triggered from event handlers
-  const [slideTransition, setSlideTransition] = useState({
-    prevIdx: 0, dir: "left", active: false,
-  });
-  const transitionTimer = useRef(null);
-
-  // Tap flash
-  const [tapFlash, setTapFlash] = useState(null);
+  // Hint system
+  const [hintsRevealed, setHintsRevealed] = useState(0);
+  const [activeHint, setActiveHint] = useState(null); // clue object or null
 
   // Animated score display
   const [displayScore, setDisplayScore] = useState(totalScore);
@@ -50,11 +46,15 @@ export function GameScreen({
 
   const isPlaying = phase === PHASE.PLAYING;
   const maxScore = calcMaxScore(cluesViewed);
+  const maxHints = Math.max(0, (country?.clues.length ?? 1) - 1);
 
-  // Measure screen height
+  // Measure screen dimensions
   useEffect(() => {
     const measure = () => {
-      if (screenRef.current) setScreenHeight(screenRef.current.offsetHeight);
+      if (screenRef.current) {
+        setScreenHeight(screenRef.current.offsetHeight);
+        setScreenWidth(screenRef.current.offsetWidth);
+      }
     };
     measure();
     window.addEventListener("resize", measure);
@@ -67,7 +67,7 @@ export function GameScreen({
     const start = prevScoreRef.current;
     const end = totalScore;
     prevScoreRef.current = totalScore;
-    const duration = 600;
+    const duration = 1000;
     const startTime = performance.now();
     let raf;
     function tick(now) {
@@ -81,17 +81,15 @@ export function GameScreen({
     return () => cancelAnimationFrame(raf);
   }, [totalScore]);
 
-  // Reset when a new country loads — this is a sync from props, acceptable
+  // Reset when a new country loads
   const prevCountryId = useRef(country?.id);
   if (country?.id !== prevCountryId.current) {
     prevCountryId.current = country?.id;
-    // These are safe: we're setting initial state before first render of new country
     if (view !== "clue") setView("clue");
-    if (slideTransition.active || slideTransition.prevIdx !== 0) {
-      setSlideTransition({ prevIdx: 0, dir: "left", active: false });
-    }
     if (dragY !== 0) setDragY(0);
     if (dragX !== 0) setDragX(0);
+    if (hintsRevealed !== 0) setHintsRevealed(0);
+    if (activeHint !== null) setActiveHint(null);
   }
 
   // Auto-advance after reveal
@@ -104,43 +102,39 @@ export function GameScreen({
   const openMap = useCallback(() => {
     if (isPlaying) {
       setView("map");
-      setDragY(0);
+      setDragX(0);
+      setActiveHint(null);
     }
   }, [isPlaying]);
 
   const closeMap = useCallback(() => {
     setView("clue");
-    setDragY(0);
+    setDragX(0);
   }, []);
 
-  // Start a slide transition — called from event handlers
-  const startSlideTransition = useCallback((prevIdx, direction) => {
-    if (transitionTimer.current) clearTimeout(transitionTimer.current);
-    const dir = direction === "next" ? "left" : "right";
-    setSlideTransition({ prevIdx, dir, active: true });
-    transitionTimer.current = setTimeout(() => {
-      setSlideTransition((prev) => ({ ...prev, active: false, prevIdx: prev.prevIdx }));
-    }, 320);
-  }, []);
+  // Reveal next hint as overlay bubble
+  const revealHint = useCallback(() => {
+    if (!isPlaying || hintsRevealed >= maxHints) return;
+    const nextHintClueIdx = hintsRevealed + 1;
+    const hintClue = country?.clues[nextHintClueIdx];
+    if (!hintClue) return;
+    cycleClue("next"); // penalise score for viewing more clues
+    setHintsRevealed((h) => h + 1);
+    setActiveHint(hintClue);
+  }, [isPlaying, hintsRevealed, maxHints, country, cycleClue]);
 
-  // Wrap cycleClue to trigger transitions from event handlers
-  const handleCycleClue = useCallback((direction) => {
-    const currentIdx = clueIndex;
-    cycleClue(direction);
-    startSlideTransition(currentIdx, direction);
-  }, [clueIndex, cycleClue, startSlideTransition]);
+  const dismissHint = useCallback(() => setActiveHint(null), []);
 
   // ── Gesture handlers ──
-  const handleDragY = useCallback((dy) => {
-    if (view === "clue" && isPlaying) {
-      setDragY(Math.min(0, dy));
-    }
+  // Drag LEFT (negative dragX in clue view) → peek at map
+  // Drag UP   (negative dragY in clue view) → skip preview
+  // In map view: no drag offset — Leaflet handles touch, we only commit on swipe
+  const handleDragX = useCallback((dx) => {
+    if (view === "clue" && isPlaying) setDragX(Math.min(0, dx));
   }, [view, isPlaying]);
 
-  const handleDragX = useCallback((dx) => {
-    if (view === "clue" && isPlaying) {
-      setDragX(dx);
-    }
+  const handleDragY = useCallback((dy) => {
+    if (view === "clue" && isPlaying) setDragY(Math.min(0, dy));
   }, [view, isPlaying]);
 
   const handleDragEnd = useCallback(() => {
@@ -148,81 +142,72 @@ export function GameScreen({
     setDragX(0);
   }, []);
 
+  // Swipe LEFT (in clue view) → open map
   const handleSwipeLeft = useCallback(() => {
-    if (view === "clue" && isPlaying) {
-      setDragX(0);
-      handleCycleClue("next");
-    }
-  }, [view, isPlaying, handleCycleClue]);
+    setDragX(0);
+    if (view === "clue") openMap();
+  }, [view, openMap]);
 
+  // Swipe RIGHT (in map view) → close map
   const handleSwipeRight = useCallback(() => {
-    if (view === "clue" && isPlaying) {
-      setDragX(0);
-      handleCycleClue("prev");
-    }
-  }, [view, isPlaying, handleCycleClue]);
+    setDragX(0);
+    if (view === "map") closeMap();
+  }, [view, closeMap]);
 
+  // Swipe UP → new country (skip)
   const handleSwipeUp = useCallback(() => {
     setDragY(0);
-    openMap();
-  }, [openMap]);
+    if (view === "clue" && isPlaying) skipCountry();
+  }, [view, isPlaying, skipCountry]);
 
+  // In map view: only handle right-swipe (close map) so Leaflet panning isn't blocked.
+  // In clue view: handle left (open map), up (skip), and drag feedback.
   const swipeHandlers = useSwipe(
-    view === "clue" && isPlaying
+    isPlaying && view === "clue"
       ? {
           onSwipeLeft: handleSwipeLeft,
-          onSwipeRight: handleSwipeRight,
+          onSwipeRight: undefined,
           onSwipeUp: handleSwipeUp,
           onDragX: handleDragX,
           onDragY: handleDragY,
           onDragEnd: handleDragEnd,
           enabled: true,
         }
+      : isPlaying && view === "map"
+      ? {
+          onSwipeRight: handleSwipeRight,
+          onDragEnd: handleDragEnd,
+          enabled: true,
+        }
       : { enabled: false }
   );
 
-  // ── Tap flash ──
-  const handleTap = useCallback((e, direction) => {
-    if (!isPlaying) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    setTapFlash({ x, y, id: Date.now() });
-    setTimeout(() => setTapFlash(null), 500);
-    handleCycleClue(direction);
-  }, [isPlaying, handleCycleClue]);
-
   // ── Layout calculations ──
-  const h = screenHeight;
-  const isDraggingY = dragY < -2;
-  const isDraggingX = Math.abs(dragX) > 2;
+  // Map sits to the RIGHT. Left swipe slides clue left, map peeks in from right.
+  const w = screenWidth;
+  const isDraggingLeft = dragX < -2 && view === "clue";
+  const isDraggingRight = dragX > 2 && view === "map";
+  const isDraggingUp = dragY < -2 && view === "clue";
 
-  const clueY = view === "map" ? -h : dragY;
-  const mapY = view === "map" ? 0 : h + dragY;
-  const useTransition = !isDraggingY;
-  const transitionStyle = useTransition
+  const useXTransition = !isDraggingLeft && !isDraggingRight;
+  const useYTransition = !isDraggingUp;
+  const xTransitionStyle = useXTransition
     ? "transform 0.42s cubic-bezier(0.32, 0.72, 0, 1)"
     : "none";
-
-  const xTransition = !isDraggingX
-    ? "transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.32s ease"
+  const yTransitionStyle = useYTransition
+    ? "transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)"
     : "none";
 
-  function renderClue(idx, entering, exiting) {
-    const animClass = exiting
-      ? (slideTransition.dir === "left" ? styles.exitLeft : styles.exitRight)
-      : entering
-      ? (slideTransition.dir === "left" ? styles.enterRight : styles.enterLeft)
-      : styles.visible;
+  // Clue view: sits at 0 normally; slides left to open map; slides up on skip drag
+  // When in map view and dragging right, clue slides in from the left behind the map
+  const clueTranslateX = view === "map"
+    ? -w + Math.max(0, dragX)
+    : (isDraggingLeft ? dragX : 0);
+  const clueTranslateY = isDraggingUp ? dragY * 0.4 : 0;
+  const clueOpacity = isDraggingUp ? Math.max(0.4, 1 + dragY / 300) : 1;
 
-    return (
-      <div key={idx} className={`${styles.slide} ${animClass}`}>
-        <ReelSlide clue={country.clues[idx]} />
-      </div>
-    );
-  }
-
-  const totalClues = country?.clues.length ?? 0;
+  // Map view: sits at +w normally; slides in from right when opening
+  const mapTranslateX = view === "map" ? (isDraggingRight ? dragX : 0) : w + dragX;
 
   return (
     <div className={styles.screen} ref={screenRef} {...swipeHandlers}>
@@ -230,68 +215,38 @@ export function GameScreen({
       {/* ── Clue view ── */}
       <div
         className={styles.clueView}
-        style={{ transform: `translateY(${clueY}px)`, transition: transitionStyle }}
+        style={{
+          transform: `translateX(${clueTranslateX}px) translateY(${clueTranslateY}px)`,
+          transition: useXTransition && !isDraggingUp
+            ? "transform 0.42s cubic-bezier(0.32, 0.72, 0, 1)"
+            : isDraggingUp ? "none" : xTransitionStyle,
+          opacity: clueOpacity,
+        }}
       >
-        {/* Slide stack with horizontal drag offset */}
-        <div
-          className={styles.slideStack}
-          style={{
-            transform: !slideTransition.active && isDraggingX
-              ? `translateX(${dragX}px) scale(${1 - Math.abs(dragX) / (h * 2)})`
-              : "translateX(0) scale(1)",
-            transition: xTransition,
-            opacity: !slideTransition.active && isDraggingX
-              ? Math.max(0.5, 1 - Math.abs(dragX) / (h * 0.8))
-              : 1,
-            borderRadius: !slideTransition.active && isDraggingX
-              ? `${Math.min(24, Math.abs(dragX) / 8)}px`
-              : "0px",
-            overflow: "hidden",
-          }}
-        >
-          {slideTransition.active && renderClue(slideTransition.prevIdx, false, true)}
-          {renderClue(clueIndex, slideTransition.active, false)}
-        </div>
-
-        {/* Tap zones */}
-        {isPlaying && (
-          <div className={styles.tapZones}>
-            <div className={styles.tapLeft} onClick={(e) => handleTap(e, "prev")} />
-            <div className={styles.tapRight} onClick={(e) => handleTap(e, "next")} />
+        {/* Always show the base photo clue (index 0) */}
+        <div className={styles.slideStack}>
+          <div className={styles.slide}>
+            <ReelSlide clue={country.clues[0]} />
           </div>
-        )}
-
-        {/* Tap flash ripple */}
-        {tapFlash && (
-          <div
-            key={tapFlash.id}
-            className={styles.tapRipple}
-            style={{ left: tapFlash.x, top: tapFlash.y }}
-          />
-        )}
+        </div>
 
         {/* ── HUD ── */}
         <div className={styles.hud}>
-          {/* Stories-style progress bars */}
-          <div className={styles.progressBars}>
-            {Array.from({ length: totalClues }).map((_, i) => (
-              <div key={i} className={styles.progressTrack}>
-                <div
-                  className={`${styles.progressFill} ${
-                    i < clueIndex ? styles.progressDone
-                    : i === clueIndex ? styles.progressActive
-                    : ""
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-
           <div className={styles.hudRow}>
             <div className={styles.hudLeft}>
-              <span className={styles.clueLabel}>
-                Clue {clueIndex + 1} of {totalClues}
-              </span>
+              {/* Hint button */}
+              {isPlaying && maxHints > 0 && (
+                <button
+                  className={`${styles.hintBtn} ${hintsRevealed >= maxHints ? styles.hintBtnExhausted : ""}`}
+                  onClick={hintsRevealed < maxHints ? revealHint : undefined}
+                  disabled={hintsRevealed >= maxHints}
+                >
+                  💡
+                  <span className={styles.hintCount}>
+                    {maxHints - hintsRevealed} hint{maxHints - hintsRevealed !== 1 ? "s" : ""}
+                  </span>
+                </button>
+              )}
             </div>
             <div className={styles.hudRight}>
               {streak >= 2 && (
@@ -315,16 +270,33 @@ export function GameScreen({
           </div>
         )}
 
-        {/* Swipe-up guess hint */}
-        {isPlaying && (
+        {/* Hint overlay bubble */}
+        {activeHint && (
+          <div className={styles.hintOverlay} onClick={dismissHint}>
+            <div className={styles.hintBubble}>
+              <HintContent clue={activeHint} />
+              <span className={styles.hintDismiss}>Tap to dismiss</span>
+            </div>
+          </div>
+        )}
+
+        {/* Swipe-left guess hint */}
+        {isPlaying && !activeHint && (
           <button className={styles.guessHint} onClick={openMap}>
             <span className={styles.hintChevron}>
-              <svg width="14" height="9" viewBox="0 0 14 9" fill="none">
-                <path d="M1 8L7 2L13 8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="9" height="14" viewBox="0 0 9 14" fill="none">
+                <path d="M1 1L7 7L1 13" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </span>
             <span>Guess on map</span>
           </button>
+        )}
+
+        {/* Skip up-drag hint */}
+        {isDraggingUp && isPlaying && (
+          <div className={styles.skipDragHint}>
+            <span>↑ Release to skip</span>
+          </div>
         )}
 
         {/* Skip */}
@@ -337,9 +309,9 @@ export function GameScreen({
       <div
         className={styles.mapView}
         style={{
-          transform: `translateY(${mapY}px)`,
-          transition: transitionStyle,
-          visibility: (view === "map" || isDraggingY) ? "visible" : "hidden",
+          transform: `translateX(${mapTranslateX}px)`,
+          transition: xTransitionStyle,
+          visibility: (view === "map" || isDraggingLeft) ? "visible" : "hidden",
         }}
       >
         <MapScreen
@@ -348,11 +320,11 @@ export function GameScreen({
           maxScore={maxScore}
           onScore={submitMapGuess}
           onBack={closeMap}
+          visible={view === "map"}
         />
 
         {/* HUD over map */}
         <div className={styles.hud}>
-          <div className={styles.progressBars} style={{ opacity: 0 }} />
           <div className={styles.hudRow}>
             <div className={styles.hudLeft} />
             <div className={styles.hudRight}>
@@ -391,4 +363,42 @@ export function GameScreen({
       )}
     </div>
   );
+}
+
+// Renders a hint clue as compact overlay content
+function HintContent({ clue }) {
+  if (clue.type === "photo") {
+    return <span className={styles.hintText}>{clue.caption || "Photo"}</span>;
+  }
+  if (clue.type === "fact") {
+    return (
+      <div className={styles.hintFactRow}>
+        {clue.icon && <span className={styles.hintIcon}>{clue.icon}</span>}
+        <span className={styles.hintText}>{clue.text}</span>
+      </div>
+    );
+  }
+  if (clue.type === "flag") {
+    return (
+      <div className={styles.hintFlagRow}>
+        {(clue.colors || []).map((c, i) => (
+          <span key={i} className={styles.hintFlagSwatch} style={{ background: c }} />
+        ))}
+        <span className={styles.hintText}>Flag colours</span>
+      </div>
+    );
+  }
+  if (clue.type === "stat") {
+    return (
+      <div className={styles.hintStats}>
+        {(clue.stats || []).map((s, i) => (
+          <div key={i} className={styles.hintStat}>
+            <span className={styles.hintStatVal}>{s.value}</span>
+            <span className={styles.hintStatLabel}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <span className={styles.hintText}>{clue.text || "Hint"}</span>;
 }

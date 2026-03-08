@@ -17,7 +17,7 @@
   will-change: transform;
 }
 
-/* ── Map view ── */
+/* ── Map view ── sits to the right, slides in on left swipe ── */
 .mapView {
   position: absolute;
   inset: 0;
@@ -30,85 +30,11 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  will-change: transform, opacity;
 }
 
 .slide {
   position: absolute;
   inset: 0;
-  will-change: transform, opacity;
-}
-
-.visible { transform: translateX(0); opacity: 1; }
-
-.enterRight {
-  animation: enterFromRight 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-.exitLeft {
-  animation: exitToLeft 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-.enterLeft {
-  animation: enterFromLeft 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-.exitRight {
-  animation: exitToRight 0.32s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-
-@keyframes enterFromRight {
-  from { transform: translateX(40%);  opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes exitToLeft {
-  from { transform: translateX(0);     opacity: 1; }
-  to   { transform: translateX(-40%);  opacity: 0; }
-}
-@keyframes enterFromLeft {
-  from { transform: translateX(-40%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes exitToRight {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(40%);  opacity: 0; }
-}
-
-/* ── Tap zones ── */
-.tapZones {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  pointer-events: none;
-}
-.tapLeft {
-  width: 28%;
-  height: 100%;
-  pointer-events: all;
-  cursor: pointer;
-}
-.tapRight {
-  flex: 1;
-  height: 100%;
-  pointer-events: all;
-  cursor: pointer;
-}
-
-/* ── Tap ripple effect ── */
-.tapRipple {
-  position: absolute;
-  z-index: 11;
-  width: 60px;
-  height: 60px;
-  margin-left: -30px;
-  margin-top: -30px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
-  pointer-events: none;
-  animation: rippleOut 0.5s cubic-bezier(0, 0, 0.2, 1) forwards;
-}
-
-@keyframes rippleOut {
-  from { transform: scale(0.5); opacity: 1; }
-  to   { transform: scale(4); opacity: 0; }
 }
 
 /* ── HUD ── */
@@ -121,43 +47,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 10px 12px 0;
+  padding: 54px 12px 0;
   box-sizing: border-box;
   pointer-events: none;
-}
-
-/* ── Stories-style progress bars ── */
-.progressBars {
-  display: flex;
-  gap: 4px;
-  width: 100%;
-  padding: 0 2px;
-}
-
-.progressTrack {
-  flex: 1;
-  height: 3px;
-  background: rgba(255,255,255,0.15);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.progressFill {
-  width: 0%;
-  height: 100%;
-  border-radius: 2px;
-  background: rgba(255,255,255,0.5);
-  transition: width 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-}
-
-.progressDone {
-  width: 100%;
-  background: rgba(255,255,255,0.85);
-}
-
-.progressActive {
-  width: 100%;
-  background: #fff;
 }
 
 /* ── HUD row ── */
@@ -172,13 +64,6 @@
   align-items: center;
   gap: 8px;
   pointer-events: all;
-}
-
-.clueLabel {
-  color: rgba(255,255,255,0.45);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 .streakBadge {
@@ -221,10 +106,46 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Hint button ── */
+.hintBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,220,50,0.25);
+  border-radius: 20px;
+  padding: 4px 12px 4px 8px;
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  pointer-events: all;
+}
+
+.hintBtn:active {
+  transform: scale(0.93);
+  background: rgba(255,220,50,0.15);
+}
+
+.hintBtnExhausted {
+  opacity: 0.35;
+  cursor: default;
+  border-color: rgba(255,255,255,0.08);
+}
+
+.hintCount {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+}
+
 /* ── Max score bar ── */
 .maxScoreBar {
   position: absolute;
-  top: 64px;
+  top: 104px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
@@ -251,17 +172,122 @@
 .maxValue { color: #a5b4fc; font-size: 14px; font-weight: 900; }
 .maxPts   { color: rgba(255,255,255,0.3); font-size: 11px; font-weight: 600; }
 
-/* ── Swipe-up guess hint ── */
-.guessHint {
+/* ── Hint overlay ── */
+.hintOverlay {
   position: absolute;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 100px;
+  justify-content: center;
+  pointer-events: all;
+  animation: overlayIn 0.2s ease forwards;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.hintBubble {
+  background: rgba(15, 15, 30, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 22px;
+  padding: 18px 22px 14px;
+  max-width: 320px;
+  width: calc(100% - 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
+  animation: bubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+@keyframes bubblePop {
+  from { transform: scale(0.8) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.hintText {
+  color: rgba(255,255,255,0.88);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.hintFactRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.hintIcon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hintFlagRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hintFlagSwatch {
+  width: 28px;
+  height: 18px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.hintStats {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hintStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hintStatVal {
+  color: #a5b4fc;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.hintStatLabel {
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hintDismiss {
+  color: rgba(255,255,255,0.25);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Swipe-left guess hint ── */
+.guessHint {
+  position: absolute;
+  bottom: 32px;
+  right: 20px;
+  z-index: 20;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   background: rgba(99,102,241,0.2);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -269,40 +295,59 @@
   color: rgba(255,255,255,0.85);
   font-size: 14px;
   font-weight: 600;
-  padding: 12px 24px;
+  padding: 11px 18px 11px 16px;
   border-radius: 28px;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
-  animation: pulseUp 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulseRight 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   transition: background 0.15s, transform 0.1s;
 }
 
 .guessHint:active {
-  transform: translateX(-50%) scale(0.95);
+  transform: scale(0.95);
   background: rgba(99,102,241,0.35);
 }
 
 .hintChevron {
   display: flex;
-  animation: bounceUp 1.4s ease infinite;
+  animation: bounceRight 1.4s ease infinite;
 }
 
-@keyframes bounceUp {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-3px); }
+@keyframes bounceRight {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(3px); }
 }
 
-@keyframes pulseUp {
-  0%, 100% { transform: translateX(-50%) translateY(0);    opacity: 0.85; }
-  50%       { transform: translateX(-50%) translateY(-4px); opacity: 1; }
+@keyframes pulseRight {
+  0%, 100% { opacity: 0.85; }
+  50%       { opacity: 1; }
+}
+
+/* ── Skip drag hint ── */
+.skipDragHint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  color: rgba(255,255,255,0.7);
+  font-size: 15px;
+  font-weight: 700;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 10px 20px;
+  border-radius: 20px;
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 /* ── Skip ── */
 .skipBtn {
   position: absolute;
   bottom: 40px;
-  right: 16px;
+  left: 16px;
   z-index: 20;
   background: transparent;
   border: 1px solid rgba(255,255,255,0.08);
@@ -321,4 +366,23 @@
 }
 .skipBtn:active {
   transform: scale(0.95);
+}
+
+/* ── Tap ripple (kept for potential use) ── */
+.tapRipple {
+  position: absolute;
+  z-index: 11;
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  margin-top: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  animation: rippleOut 0.5s cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+@keyframes rippleOut {
+  from { transform: scale(0.5); opacity: 1; }
+  to   { transform: scale(4); opacity: 0; }
 }

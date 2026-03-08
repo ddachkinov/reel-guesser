@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import styles from "./BriefReveal.module.css";
 
 function scoreColor(km) {
@@ -15,9 +16,30 @@ function scoreLabel(km) {
   return "Way off";
 }
 
+function useCountUp(target, duration = 1200) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (target == null) return;
+    let raf;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return value;
+}
+
 export function BriefReveal({ country, distanceKm, score, onTap }) {
   const color = scoreColor(distanceKm);
   const label = distanceKm != null ? scoreLabel(distanceKm) : "";
+  const animatedKm = useCountUp(distanceKm, 1200);
+  const animatedScore = useCountUp(score, 1000);
+
   return (
     <div className={styles.overlay} onClick={onTap} style={{ cursor: onTap ? "pointer" : "default" }}>
       <div className={styles.card}>
@@ -30,14 +52,14 @@ export function BriefReveal({ country, distanceKm, score, onTap }) {
             <div className={styles.scoreRow}>
               <div className={styles.metric}>
                 <span className={styles.metricValue} style={{ color }}>
-                  {distanceKm.toLocaleString()}
+                  {animatedKm.toLocaleString()}
                 </span>
                 <span className={styles.metricUnit}>km off</span>
               </div>
               <div className={styles.divider} />
               <div className={styles.metric}>
                 <span className={styles.metricValue} style={{ color }}>
-                  +{score}
+                  +{animatedScore}
                 </span>
                 <span className={styles.metricUnit}>points</span>
               </div>
