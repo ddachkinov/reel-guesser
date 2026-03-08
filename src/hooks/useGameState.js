@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { getRandomCountry } from "../data/countries";
+import { fetchCountryPhoto } from "../utils/unsplash";
 
 export const PHASE = {
   INTRO: "intro",
@@ -63,6 +64,20 @@ export function useGameState() {
     setLastScore(null);
     setLastDistanceKm(null);
     setShowScorePop(false);
+
+    // Async: fetch a fresh high-quality photo from Unsplash for this country.
+    // Shows the fallback URL immediately; updates once the API responds.
+    if (c.photoQuery) {
+      fetchCountryPhoto(c.photoQuery).then((photo) => {
+        if (!photo) return;
+        setCountry((prev) => {
+          if (prev?.id !== c.id) return prev; // country changed before fetch returned
+          const newClues = [...prev.clues];
+          newClues[0] = { ...newClues[0], imageUrl: photo.url, attribution: photo.attribution };
+          return { ...prev, clues: newClues };
+        });
+      });
+    }
   }, []);
 
   const startGame = useCallback(() => _load(null), [_load]);
