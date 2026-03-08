@@ -13,15 +13,15 @@ export function IntroScreen({ onStart, totalScore, gamesPlayed, streak, autoAdva
         <h2 className={styles.howTitle}>How to play</h2>
         <div className={styles.step}>
           <span className={styles.stepNum}>1</span>
-          <p>Study the photo — tap 💡 to reveal hints (costs points)</p>
+          <p>A photo appears — you have 10 s to study it before the map opens</p>
         </div>
         <div className={styles.step}>
           <span className={styles.stepNum}>2</span>
-          <p>Swipe left to open the map and tap to pin your guess</p>
+          <p>Tap the map to pin your guess — 10 s on the clock, no pin = no points</p>
         </div>
         <div className={styles.step}>
           <span className={styles.stepNum}>3</span>
-          <p>Score by distance — closer means more points. Swipe up to skip</p>
+          <p>Score by distance, learn a fact, swipe up for the next photo</p>
         </div>
       </div>
 

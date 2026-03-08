@@ -114,6 +114,21 @@ export function useGameState() {
     }, 700);
   }, [country, cluesViewed, totalScore, gamesPlayed, streak]);
 
+  // Map timer expired with no guess — 0 pts, streak resets, reveal phase
+  const timeoutGuess = useCallback(() => {
+    setLastScore(0);
+    setLastDistanceKm(null); // null = timed out (no coordinates)
+    setShowScorePop(false);
+    const newGames = gamesPlayed + 1;
+    setGamesPlayed(newGames);
+    setStreak(0);
+    try {
+      localStorage.setItem("rg_games", newGames.toString());
+      localStorage.setItem("rg_streak", "0");
+    } catch {}
+    setTimeout(() => setPhase(PHASE.REVEALING), 700);
+  }, [gamesPlayed]);
+
   const skipCountry = useCallback(() => {
     setStreak(0);
     setPhase(PHASE.SKIPPED);
@@ -136,6 +151,7 @@ export function useGameState() {
     startGame,
     cycleClue,
     submitMapGuess,
+    timeoutGuess,
     skipCountry,
     advance,
   };

@@ -1,7 +1,6 @@
 .screen {
   position: absolute;
   inset: 0;
-  background: #0d0d1a;
 }
 
 .map {
@@ -13,21 +12,21 @@
 /* Override Leaflet attribution */
 :global(.leaflet-control-attribution) {
   font-size: 9px !important;
-  background: rgba(0,0,0,0.45) !important;
+  background: rgba(0,0,0,0.35) !important;
   color: rgba(255,255,255,0.3) !important;
 }
 :global(.leaflet-control-attribution a) {
   color: rgba(255,255,255,0.4) !important;
 }
 
-/* Gradient so HUD stays legible */
+/* Gradient so HUD stays legible over the map */
 .topFade {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 120px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
+  height: 130px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%);
   z-index: 5;
   pointer-events: none;
 }
@@ -46,7 +45,6 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -63,12 +61,25 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* Max score pill */
-.maxScorePill {
+/* Top-right cluster: countdown ring + score pill */
+.topRight {
   position: absolute;
-  top: 58px;
+  top: 52px;
   right: 14px;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Max score pill */
+.maxScorePill {
   background: rgba(0,0,0,0.45);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -78,16 +89,10 @@
   font-weight: 600;
   padding: 5px 12px;
   border-radius: 20px;
-  animation: fadeInRight 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 .maxScorePill strong {
   color: #a5b4fc;
   font-weight: 800;
-}
-
-@keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(8px); }
-  to   { opacity: 1; transform: translateX(0); }
 }
 
 /* Tap hint */
@@ -124,7 +129,7 @@
   50%       { opacity: 1;   transform: translateX(-50%) scale(1.02); }
 }
 
-/* Result bar */
+/* Result bar slides up after guess */
 .resultBar {
   position: absolute;
   bottom: 0;
@@ -153,14 +158,14 @@
   letter-spacing: -0.3px;
 }
 
-/* Guess pin pulse — referenced inline by makeGuessIcon */
+/* Guess pin pulse */
 @keyframes guessPulse {
   0%   { box-shadow: 0 2px 16px rgba(99,102,241,0.9), 0 0 0 0 rgba(99,102,241,0.5); }
   70%  { box-shadow: 0 2px 16px rgba(99,102,241,0.9), 0 0 0 20px rgba(99,102,241,0); }
   100% { box-shadow: 0 2px 16px rgba(99,102,241,0.9), 0 0 0 0 rgba(99,102,241,0); }
 }
 
-/* Drop-in keyframe for answer emoji */
+/* Answer emoji drop-in */
 @keyframes dropIn {
   from { transform: translate(-50%, -200%); opacity: 0; }
   to   { transform: translate(-50%, -100%); opacity: 1; }

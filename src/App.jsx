@@ -40,6 +40,7 @@ export default function App() {
         autoAdvance={autoAdvance}
         cycleClue={game.cycleClue}
         submitMapGuess={game.submitMapGuess}
+        timeoutGuess={game.timeoutGuess}
         skipCountry={game.skipCountry}
         advance={game.advance}
       />
