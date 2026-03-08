@@ -11,7 +11,7 @@ export const COUNTRIES = [
     region: "Eastern Asia",
     population: 125700000,
     mapCenter: [36.2048, 138.2529],
-    photoQuery: "Japan landscape temple",
+    photoQuery: "Japan temple cherry blossom street",
     clues: [
       {
         type: "photo",
@@ -33,7 +33,7 @@ export const COUNTRIES = [
     region: "South America",
     population: 215000000,
     mapCenter: [-14.235, -51.9253],
-    photoQuery: "Brazil Rio de Janeiro landscape",
+    photoQuery: "Brazil colorful streets architecture",
     clues: [
       {
         type: "photo",
@@ -55,7 +55,7 @@ export const COUNTRIES = [
     region: "Northern Africa",
     population: 104000000,
     mapCenter: [26.8206, 30.8025],
-    photoQuery: "Egypt pyramids Giza desert",
+    photoQuery: "Egypt pyramids sunset photography",
     clues: [
       {
         type: "photo",
@@ -77,7 +77,7 @@ export const COUNTRIES = [
     region: "Northern Europe",
     population: 5400000,
     mapCenter: [60.472, 8.4689],
-    photoQuery: "Norway fjord northern lights",
+    photoQuery: "Norway fjord village scenic",
     clues: [
       {
         type: "photo",
@@ -99,7 +99,7 @@ export const COUNTRIES = [
     region: "Southern Asia",
     population: 1400000000,
     mapCenter: [20.5937, 78.9629],
-    photoQuery: "India Taj Mahal architecture",
+    photoQuery: "India colorful market street life",
     clues: [
       {
         type: "photo",
@@ -121,7 +121,7 @@ export const COUNTRIES = [
     region: "Oceania",
     population: 26000000,
     mapCenter: [-25.2744, 133.7751],
-    photoQuery: "Australia Uluru outback landscape",
+    photoQuery: "Australia Sydney opera house harbour",
     clues: [
       {
         type: "photo",
@@ -143,7 +143,7 @@ export const COUNTRIES = [
     region: "Central America",
     population: 130000000,
     mapCenter: [23.6345, -102.5528],
-    photoQuery: "Mexico Chichen Itza ancient ruins",
+    photoQuery: "Mexico colorful buildings street",
     clues: [
       {
         type: "photo",
@@ -165,7 +165,7 @@ export const COUNTRIES = [
     region: "Northern Europe",
     population: 370000,
     mapCenter: [64.9631, -19.0208],
-    photoQuery: "Iceland waterfall glacier volcano",
+    photoQuery: "Iceland waterfall nature scenic",
     clues: [
       {
         type: "photo",
@@ -187,7 +187,7 @@ export const COUNTRIES = [
     region: "South America",
     population: 33000000,
     mapCenter: [-9.19, -75.0152],
-    photoQuery: "Peru Machu Picchu Andes mountains",
+    photoQuery: "Peru Machu Picchu ruins mountains",
     clues: [
       {
         type: "photo",
@@ -209,7 +209,7 @@ export const COUNTRIES = [
     region: "Northern Africa",
     population: 37000000,
     mapCenter: [31.7917, -7.0926],
-    photoQuery: "Morocco medina souk Sahara desert",
+    photoQuery: "Morocco medina colorful streets",
     clues: [
       {
         type: "photo",
@@ -233,7 +233,19 @@ export function getDailyCountry() {
   return COUNTRIES[dayOfYear % COUNTRIES.length];
 }
 
+// Shuffle bag: cycles through ALL countries before repeating any.
+let _bag = [];
+
+function _refillBag(excludeId) {
+  _bag = COUNTRIES.filter((c) => c.id !== excludeId)
+    .map((c) => ({ c, r: Math.random() }))
+    .sort((a, b) => a.r - b.r)
+    .map(({ c }) => c);
+}
+
 export function getRandomCountry(excludeId = null) {
-  const available = COUNTRIES.filter((c) => c.id !== excludeId);
-  return available[Math.floor(Math.random() * available.length)];
+  // Remove the excluded country from remaining bag too
+  _bag = _bag.filter((c) => c.id !== excludeId);
+  if (_bag.length === 0) _refillBag(excludeId);
+  return _bag.pop();
 }

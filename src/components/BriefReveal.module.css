@@ -137,14 +137,38 @@
   margin: 0;
 }
 
-.tapHint {
-  color: rgba(255, 255, 255, 0.28);
-  font-size: 13px;
-  margin: 8px 0 0;
-  animation: blink 1.6s ease infinite;
+.nextBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  animation: btnPulse 2s ease infinite;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 0.28; }
-  50%       { opacity: 0.65; }
+.nextBtn:active {
+  transform: scale(0.95);
+}
+
+.nextArrow {
+  font-size: 18px;
+  animation: bounceUp 1.4s ease infinite;
+}
+
+@keyframes btnPulse {
+  0%, 100% { background: rgba(255, 255, 255, 0.12); }
+  50%      { background: rgba(255, 255, 255, 0.2); }
+}
+
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
 }

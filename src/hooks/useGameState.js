@@ -57,7 +57,18 @@ export function useGameState() {
 
   const _load = useCallback((excludeId) => {
     const c = getRandomCountry(excludeId);
-    setCountry(c);
+    const fallbackUrl = c.clues[0]?.imageUrl;
+    const fallbackAttr = c.clues[0]?.attribution;
+
+    // Clear imageUrl so skeleton shows while Unsplash loads (no flash)
+    if (c.photoQuery) {
+      const withBlank = { ...c, clues: [...c.clues] };
+      withBlank.clues[0] = { ...withBlank.clues[0], imageUrl: null };
+      setCountry(withBlank);
+    } else {
+      setCountry(c);
+    }
+
     setClueIndex(0);
     setCluesViewed(1);
     setPhase(PHASE.PLAYING);
@@ -65,15 +76,15 @@ export function useGameState() {
     setLastDistanceKm(null);
     setShowScorePop(false);
 
-    // Async: fetch a fresh high-quality photo from Unsplash for this country.
-    // Shows the fallback URL immediately; updates once the API responds.
+    // Fetch fresh photo from Unsplash; fall back to hardcoded URL if API fails
     if (c.photoQuery) {
       fetchCountryPhoto(c.photoQuery).then((photo) => {
-        if (!photo) return;
+        const url  = photo ? photo.url  : fallbackUrl;
+        const attr = photo ? photo.attribution : fallbackAttr;
         setCountry((prev) => {
-          if (prev?.id !== c.id) return prev; // country changed before fetch returned
+          if (prev?.id !== c.id) return prev;
           const newClues = [...prev.clues];
-          newClues[0] = { ...newClues[0], imageUrl: photo.url, attribution: photo.attribution };
+          newClues[0] = { ...newClues[0], imageUrl: url, attribution: attr };
           return { ...prev, clues: newClues };
         });
       });

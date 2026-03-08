@@ -53,7 +53,6 @@ export function GameScreen({
   autoAdvance,
   submitMapGuess,
   timeoutGuess,
-  skipCountry,
   advance,
 }) {
   const [view, setView] = useState("photo"); // "photo" | "map"

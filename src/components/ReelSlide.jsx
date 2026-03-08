@@ -3,18 +3,29 @@ import styles from "./ReelSlide.module.css";
 
 function PhotoSlide({ clue }) {
   const [loaded, setLoaded] = useState(false);
+  const hasUrl = !!clue.imageUrl;
+
+  // Reset loaded state when URL changes (e.g. Unsplash replaces fallback)
+  const [prevUrl, setPrevUrl] = useState(clue.imageUrl);
+  if (clue.imageUrl !== prevUrl) {
+    setPrevUrl(clue.imageUrl);
+    setLoaded(false);
+  }
+
   return (
     <div className={styles.photoSlide}>
       {!loaded && <div className={styles.skeleton} />}
-      <img
-        src={clue.imageUrl}
-        alt=""
-        className={`${styles.photo} ${loaded ? styles.photoLoaded : ""}`}
-        onLoad={() => setLoaded(true)}
-      />
+      {hasUrl && (
+        <img
+          src={clue.imageUrl}
+          alt=""
+          className={`${styles.photo} ${loaded ? styles.photoLoaded : ""}`}
+          onLoad={() => setLoaded(true)}
+        />
+      )}
       <div className={styles.photoGradientTop} />
       <div className={styles.photoGradientBottom} />
-      <div className={styles.attribution}>{clue.attribution}</div>
+      {clue.attribution && <div className={styles.attribution}>{clue.attribution}</div>}
     </div>
   );
 }

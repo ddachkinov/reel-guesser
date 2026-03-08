@@ -32,8 +32,16 @@ export async function fetchCountryPhoto(query) {
     const results = data.results ?? [];
     if (results.length === 0) return null;
 
-    // Pick randomly from up to the first 5 results for variety
-    const pool = results.slice(0, Math.min(5, results.length));
+    // Filter out aerial/map/satellite shots that look like maps
+    const BAD_TAGS = /\b(map|satellite|aerial view|cartography|atlas|diagram)\b/i;
+    const filtered = results.filter((r) => {
+      const desc = `${r.description ?? ""} ${r.alt_description ?? ""}`;
+      return !BAD_TAGS.test(desc);
+    });
+
+    // Pick randomly from up to the first 5 filtered results for variety
+    const source = filtered.length > 0 ? filtered : results;
+    const pool = source.slice(0, Math.min(5, source.length));
     const photo = pool[Math.floor(Math.random() * pool.length)];
 
     const result = {

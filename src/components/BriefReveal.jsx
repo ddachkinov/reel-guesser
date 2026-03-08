@@ -87,7 +87,12 @@ export function BriefReveal({ country, distanceKm, score, onTap }) {
           </div>
         )}
 
-        {onTap && <p className={styles.tapHint}>Tap to continue</p>}
+        {onTap && (
+          <button className={styles.nextBtn} onClick={onTap}>
+            Next round
+            <span className={styles.nextArrow}>↑</span>
+          </button>
+        )}
       </div>
     </div>
   );
