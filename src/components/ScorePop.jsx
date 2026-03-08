@@ -5,15 +5,14 @@ export function ScorePop({ score, onDone }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const t = setTimeout(onDone, 900);
+    const t = setTimeout(onDone, 1100);
     return () => clearTimeout(t);
   }, [onDone]);
 
   return (
     <div ref={ref} className={styles.pop}>
-      +{score}
+      <span className={styles.plus}>+</span>
+      <span className={styles.num}>{score}</span>
     </div>
   );
 }

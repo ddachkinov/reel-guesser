@@ -1,60 +1,12 @@
-/* Every slide is absolutely positioned, full viewport */
+/* Slide fills its parent — animations handled by GameScreen */
 .slide {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  will-change: transform, opacity;
-  transition: transform 0.38s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.38s ease;
 }
 
-.visible {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.enterFromBottom {
-  transform: translateY(100%);
-  opacity: 0.4;
-  animation: slideInFromBottom 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.enterFromTop {
-  transform: translateY(-100%);
-  opacity: 0.4;
-  animation: slideInFromTop 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.exitToTop {
-  animation: slideOutToTop 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.exitToBottom {
-  animation: slideOutToBottom 0.38s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes slideInFromBottom {
-  from { transform: translateY(100%); opacity: 0.4; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-
-@keyframes slideInFromTop {
-  from { transform: translateY(-100%); opacity: 0.4; }
-  to   { transform: translateY(0);     opacity: 1; }
-}
-
-@keyframes slideOutToTop {
-  from { transform: translateY(0);    opacity: 1; }
-  to   { transform: translateY(-100%); opacity: 0; }
-}
-
-@keyframes slideOutToBottom {
-  from { transform: translateY(0);   opacity: 1; }
-  to   { transform: translateY(100%); opacity: 0; }
-}
-
-/* ── Photo slide ────────────────────────────────── */
+/* ── Photo slide ── */
 .photoSlide {
   position: relative;
   width: 100%;
@@ -68,7 +20,7 @@
   inset: 0;
   background: linear-gradient(135deg, #1a1a2e 0%, #252545 50%, #1a1a2e 100%);
   background-size: 200% 200%;
-  animation: shimmer 1.6s infinite;
+  animation: shimmer 1.6s ease infinite;
 }
 
 @keyframes shimmer {
@@ -83,7 +35,7 @@
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.45s ease;
 }
 
 .photoLoaded {
@@ -114,12 +66,12 @@
   position: absolute;
   bottom: 260px;
   left: 16px;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.35);
   font-size: 11px;
   pointer-events: none;
 }
 
-/* ── Text slides (fact / stat / flag) ───────────── */
+/* ── Text slides (fact / stat / flag) ── */
 .textSlide {
   width: 100%;
   height: 100%;

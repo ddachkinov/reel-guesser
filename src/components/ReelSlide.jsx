@@ -65,15 +65,9 @@ function FlagSlide({ clue }) {
   );
 }
 
-export function ReelSlide({ clue, isEntering, isExiting, direction }) {
-  const animClass = isEntering
-    ? direction === "up" ? styles.enterFromBottom : styles.enterFromTop
-    : isExiting
-    ? direction === "up" ? styles.exitToTop : styles.exitToBottom
-    : styles.visible;
-
+export function ReelSlide({ clue }) {
   return (
-    <div className={`${styles.slide} ${animClass}`}>
+    <div className={styles.slide}>
       {clue.type === "photo" && <PhotoSlide clue={clue} />}
       {clue.type === "fact" && <FactSlide clue={clue} />}
       {clue.type === "stat" && <StatSlide clue={clue} />}
