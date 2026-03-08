@@ -87,31 +87,36 @@ export function MapScreen({ country, maxScore, onScore, onBack, visible }) {
       const km = Math.round(haversine(lat, lng, ansLat, ansLng));
       const color = scoreColor(km);
 
-      // Drop guess pin
+      // Immediate: drop guess pin, hide UI chrome
       L.marker([lat, lng], {
         icon: makeGuessIcon(), zIndexOffset: 1000,
       }).addTo(map);
+      setGuessed(true);
 
-      // Drop answer emoji (slightly delayed for drama)
+      // 250ms: reveal answer emoji + dashed line + zoom to fit both pins
       setTimeout(() => {
         L.marker([ansLat, ansLng], {
           icon: makeAnswerIcon(country.emoji), zIndexOffset: 2000,
         }).addTo(map);
 
-        // Draw distance line
         L.polyline([[lat, lng], [ansLat, ansLng]], {
           color, weight: 2.5, dashArray: "8 5", opacity: 0.85,
         }).addTo(map);
 
-        // Fit both points in view
         map.fitBounds([[lat, lng], [ansLat, ansLng]], {
           padding: [80, 100], animate: true, duration: 0.8,
         });
       }, 250);
 
-      setResult({ km, color, text: formatResult(km) });
-      setGuessed(true);
-      onScore(lat, lng);
+      // 1100ms: show result bar (zoom animation has settled — 250 + 800ms)
+      setTimeout(() => {
+        setResult({ km, color, text: formatResult(km) });
+      }, 1100);
+
+      // 1500ms: trigger scoring chain → ScorePop → BriefReveal
+      setTimeout(() => {
+        onScore(lat, lng);
+      }, 1500);
     });
 
     mapRef.current = map;

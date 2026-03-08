@@ -16,10 +16,12 @@ export function useSwipe({
   onSwipeDown,
   onSwipeLeft,
   onSwipeRight,
-  onDragX,       // (dx) => void — continuous horizontal offset
-  onDragY,       // (dy) => void — continuous vertical offset
-  onDragEnd,     // () => void — drag released without committing
+  onDragX,            // (dx) => void — continuous horizontal offset
+  onDragY,            // (dy) => void — continuous vertical offset
+  onDragEnd,          // () => void — drag released without committing
   enabled = true,
+  commitDistance = COMMIT_DISTANCE,  // override per call-site
+  flickMinPx = FLICK_MIN_PX,         // override per call-site
 } = {}) {
   const startRef = useRef(null);
   const axisRef = useRef(null); // "x" | "y" | null — locks after first move
@@ -77,15 +79,15 @@ export function useSwipe({
     let committed = false;
 
     if (axis === "y") {
-      const isFlick = vy > FLICK_VELOCITY && absDy > FLICK_MIN_PX;
-      const isSlide = absDy > COMMIT_DISTANCE;
+      const isFlick = vy > FLICK_VELOCITY && absDy > flickMinPx;
+      const isSlide = absDy > commitDistance;
       if (isFlick || isSlide) {
         if (dy < 0) { onSwipeUp?.(); committed = true; }
         else { onSwipeDown?.(); committed = true; }
       }
     } else if (axis === "x") {
-      const isFlick = vx > FLICK_VELOCITY && absDx > FLICK_MIN_PX;
-      const isSlide = absDx > COMMIT_DISTANCE;
+      const isFlick = vx > FLICK_VELOCITY && absDx > flickMinPx;
+      const isSlide = absDx > commitDistance;
       if (isFlick || isSlide) {
         if (dx < 0) { onSwipeLeft?.(); committed = true; }
         else { onSwipeRight?.(); committed = true; }
@@ -95,7 +97,7 @@ export function useSwipe({
     if (!committed) {
       onDragEnd?.();
     }
-  }, [enabled, onSwipeUp, onSwipeDown, onSwipeLeft, onSwipeRight, onDragEnd]);
+  }, [enabled, commitDistance, flickMinPx, onSwipeUp, onSwipeDown, onSwipeLeft, onSwipeRight, onDragEnd]);
 
   const onTouchCancel = useCallback(() => {
     startRef.current = null;

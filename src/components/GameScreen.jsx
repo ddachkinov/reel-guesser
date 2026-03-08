@@ -154,11 +154,11 @@ export function GameScreen({
     if (view === "map") closeMap();
   }, [view, closeMap]);
 
-  // Swipe UP → new country (skip)
+  // Swipe UP → silently advance to next country (no reveal, no streak reset)
   const handleSwipeUp = useCallback(() => {
     setDragY(0);
-    if (view === "clue" && isPlaying) skipCountry();
-  }, [view, isPlaying, skipCountry]);
+    if (view === "clue" && isPlaying) advance();
+  }, [view, isPlaying, advance]);
 
   // In map view: only handle right-swipe (close map) so Leaflet panning isn't blocked.
   // In clue view: handle left (open map), up (skip), and drag feedback.
@@ -178,6 +178,8 @@ export function GameScreen({
           onSwipeRight: handleSwipeRight,
           onDragEnd: handleDragEnd,
           enabled: true,
+          commitDistance: 130,  // 2× default — intentional swipe needed to close map
+          flickMinPx: 50,       // larger flick distance required too
         }
       : { enabled: false }
   );

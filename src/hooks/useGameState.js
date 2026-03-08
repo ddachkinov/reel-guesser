@@ -111,7 +111,7 @@ export function useGameState() {
       } else {
         setPhase(PHASE.REVEALING);
       }
-    }, 400);
+    }, 700);
   }, [country, cluesViewed, totalScore, gamesPlayed, streak]);
 
   const skipCountry = useCallback(() => {
