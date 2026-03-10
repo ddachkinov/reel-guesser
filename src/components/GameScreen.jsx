@@ -101,19 +101,16 @@ export function GameScreen({
     return () => cancelAnimationFrame(raf);
   }, [totalScore]);
 
-  // Reset when a new country loads
+  // Reset when a new country loads — all in one render-body batch so effects
+  // see photoTimeLeft=PHOTO_TIMER_SECONDS, not stale 0 from the previous round.
+  // Without this, the auto-open-map effect fires immediately on every second round.
   const prevCountryId = useRef(country?.id);
   if (country?.id !== prevCountryId.current) {
     prevCountryId.current = country?.id;
     if (view !== "photo") setView("photo");
     if (dragY !== 0) setDragY(0);
-    // Photo timer will reset via the effect below
+    if (photoTimeLeft !== PHOTO_TIMER_SECONDS) setPhotoTimeLeft(PHOTO_TIMER_SECONDS);
   }
-
-  // Photo timer — counts down while in photo view and PLAYING
-  useEffect(() => {
-    setPhotoTimeLeft(PHOTO_TIMER_SECONDS);
-  }, [country?.id]);
 
   useEffect(() => {
     if (!isPlaying || view !== "photo") return;
