@@ -34,6 +34,7 @@ export default function App() {
         cluesViewed={game.cluesViewed}
         lastScore={game.lastScore}
         lastDistanceKm={game.lastDistanceKm}
+        lastGuessInsideCountry={game.lastGuessInsideCountry}
         showScorePop={game.showScorePop}
         totalScore={game.totalScore}
         streak={game.streak}

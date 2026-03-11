@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { haversine } from "../hooks/useGameState";
+import { isPointInCountry, getCountryFeature } from "../data/countryPolygons";
 import styles from "./MapScreen.module.css";
 
 // Detect system color scheme once at module level
@@ -39,18 +40,34 @@ function makeAnswerIcon(emoji) {
   });
 }
 
-function scoreColor(km) {
+function scoreColor(km, inside) {
+  if (inside) return "#34d399";
   if (km < 500) return "#34d399";
   if (km < 2000) return "#fbbf24";
   return "#f87171";
 }
 
-function formatResult(km) {
-  if (km < 100)  return `${km} km — Bullseye!`;
+function formatResult(km, inside) {
+  if (inside) return "Right country!";
   if (km < 500)  return `${km.toLocaleString()} km — So close!`;
   if (km < 2000) return `${km.toLocaleString()} km — Not bad`;
   if (km < 4000) return `${km.toLocaleString()} km — Keep practising`;
   return         `${km.toLocaleString()} km — Way off`;
+}
+
+function addCountryLayer(map, countryId, inside) {
+  const f = getCountryFeature(countryId);
+  if (!f) return;
+  L.geoJSON(f, {
+    style: {
+      fillColor:   inside ? "#34d399" : "#f87171",
+      fillOpacity: inside ? 0.18 : 0,
+      color:       inside ? "#34d399" : "#f87171",
+      weight:      inside ? 2 : 2,
+      dashArray:   inside ? null : "6 4",
+      opacity:     0.8,
+    },
+  }).addTo(map);
 }
 
 // Circular countdown ring SVG
@@ -112,6 +129,7 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
 
     const [ansLat, ansLng] = country.mapCenter;
     if (mapRef.current) {
+      addCountryLayer(mapRef.current, country.id, false);
       L.marker([ansLat, ansLng], {
         icon: makeAnswerIcon(country.emoji), zIndexOffset: 2000,
       }).addTo(mapRef.current);
@@ -155,20 +173,25 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
       const { lat, lng } = e.latlng;
       const [ansLat, ansLng] = country.mapCenter;
       const km = Math.round(haversine(lat, lng, ansLat, ansLng));
-      const color = scoreColor(km);
+      const inside = isPointInCountry(lat, lng, country.id);
+      const color = scoreColor(km, inside);
 
       // Immediate: guess pin + hide chrome
       L.marker([lat, lng], { icon: makeGuessIcon(), zIndexOffset: 1000 }).addTo(map);
       setGuessed(true);
 
-      // 250ms: answer emoji + dashed line + zoom to fit both pins
+      // 250ms: country polygon highlight + answer emoji + line + zoom
       setTimeout(() => {
+        addCountryLayer(map, country.id, inside);
         L.marker([ansLat, ansLng], {
           icon: makeAnswerIcon(country.emoji), zIndexOffset: 2000,
         }).addTo(map);
-        L.polyline([[lat, lng], [ansLat, ansLng]], {
-          color, weight: 2.5, dashArray: "8 5", opacity: 0.85,
-        }).addTo(map);
+        // Only draw the connecting line when player missed the country
+        if (!inside) {
+          L.polyline([[lat, lng], [ansLat, ansLng]], {
+            color, weight: 2.5, dashArray: "8 5", opacity: 0.85,
+          }).addTo(map);
+        }
         map.fitBounds([[lat, lng], [ansLat, ansLng]], {
           padding: [80, 100], animate: true, duration: 0.8,
         });
@@ -176,7 +199,7 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
 
       // 1100ms: slide up result bar (after zoom settles)
       setTimeout(() => {
-        setResult({ km, color, text: formatResult(km) });
+        setResult({ km, color, text: formatResult(km, inside) });
       }, 1100);
 
       // 1500ms: trigger scoring → BriefReveal

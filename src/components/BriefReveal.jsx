@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
 import styles from "./BriefReveal.module.css";
 
-function scoreColor(km) {
+function scoreColor(km, inside) {
   if (km === null || km === undefined) return "#f87171"; // timeout = red
-  if (km < 500) return "#34d399";
+  if (inside) return "#34d399";
+  if (km < 500)  return "#34d399";
   if (km < 2000) return "#fbbf24";
   return "#f87171";
 }
 
-function scoreLabel(km) {
+function scoreLabel(km, inside) {
   if (km === null) return "Time's up!";
-  if (km < 100)   return "Bullseye!";
-  if (km < 500)   return "So close!";
-  if (km < 2000)  return "Not bad";
-  if (km < 4000)  return "Keep going";
+  if (inside) return "Right country!";
+  if (km < 500)  return "So close!";
+  if (km < 2000) return "Not bad";
+  if (km < 4000) return "Keep going";
   return "Way off";
 }
 
@@ -35,9 +36,9 @@ function useCountUp(target, duration = 1200) {
   return value;
 }
 
-export function BriefReveal({ country, distanceKm, score, onTap }) {
-  const color = scoreColor(distanceKm);
-  const label = scoreLabel(distanceKm);
+export function BriefReveal({ country, distanceKm, score, insideCountry, onTap }) {
+  const color = scoreColor(distanceKm, insideCountry);
+  const label = scoreLabel(distanceKm, insideCountry);
   const timedOut = distanceKm === null;
 
   const animatedKm    = useCountUp(distanceKm ?? 0, 1200);
@@ -63,10 +64,10 @@ export function BriefReveal({ country, distanceKm, score, onTap }) {
           {!timedOut && (
             <>
               <div className={styles.metric}>
-                <span className={styles.metricValue} style={{ color }}>
+                <span className={styles.metricValue} style={{ color: insideCountry ? "rgba(255,255,255,0.45)" : color }}>
                   {animatedKm.toLocaleString()}
                 </span>
-                <span className={styles.metricUnit}>km off</span>
+                <span className={styles.metricUnit}>{insideCountry ? "km from center" : "km off"}</span>
               </div>
               <div className={styles.divider} />
             </>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { getRandomCountry } from "../data/countries";
 import { fetchCountryPhoto } from "../utils/unsplash";
+import { isPointInCountry } from "../data/countryPolygons";
 
 export const PHASE = {
   INTRO: "intro",
@@ -23,6 +24,11 @@ export function distanceFactor(km) {
   return Math.max(0, 1 - km / 5000);
 }
 
+// Consolation multiplier for wrong-country guesses: capped at 40% of maxScore
+export function consolationFactor(km) {
+  return Math.max(0, 1 - km / 5000) * 0.4;
+}
+
 export function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const toRad = (d) => (d * Math.PI) / 180;
@@ -43,6 +49,7 @@ export function useGameState() {
   const [cluesViewed, setCluesViewed] = useState(1);
   const [lastScore, setLastScore] = useState(null);
   const [lastDistanceKm, setLastDistanceKm] = useState(null);
+  const [lastGuessInsideCountry, setLastGuessInsideCountry] = useState(null);
   const [showScorePop, setShowScorePop] = useState(false);
 
   const [totalScore, setTotalScore] = useState(() => {
@@ -74,6 +81,7 @@ export function useGameState() {
     setPhase(PHASE.PLAYING);
     setLastScore(null);
     setLastDistanceKm(null);
+    setLastGuessInsideCountry(null);
     setShowScorePop(false);
 
     // Fetch fresh photo from Unsplash; fall back to hardcoded URL if API fails
@@ -111,15 +119,21 @@ export function useGameState() {
     if (!country) return;
     const [ansLat, ansLng] = country.mapCenter;
     const km = Math.round(haversine(guessLat, guessLng, ansLat, ansLng));
-    const points = Math.round(calcMaxScore(cluesViewed) * distanceFactor(km));
+    const inside = isPointInCountry(guessLat, guessLng, country.id);
+    const maxS = calcMaxScore(cluesViewed);
+    // Inside the country = full points. Outside = distance-based consolation (max 40%).
+    const points = inside
+      ? maxS
+      : Math.round(maxS * consolationFactor(km));
 
     setLastScore(points);
     setLastDistanceKm(km);
+    setLastGuessInsideCountry(inside);
     setShowScorePop(true);
 
     const newTotal = totalScore + points;
     const newGames = gamesPlayed + 1;
-    const newStreak = points > 0 ? streak + 1 : 0;
+    const newStreak = inside || points > 0 ? streak + 1 : 0;
     setTotalScore(newTotal);
     setGamesPlayed(newGames);
     setStreak(newStreak);
@@ -170,6 +184,7 @@ export function useGameState() {
     cluesViewed,
     lastScore,
     lastDistanceKm,
+    lastGuessInsideCountry,
     showScorePop,
     totalScore,
     gamesPlayed,

@@ -47,6 +47,7 @@ export function GameScreen({
   phase,
   lastScore,
   lastDistanceKm,
+  lastGuessInsideCountry,
   showScorePop,
   totalScore,
   streak,
@@ -290,6 +291,7 @@ export function GameScreen({
           country={country}
           distanceKm={lastDistanceKm}
           score={lastScore}
+          insideCountry={lastGuessInsideCountry}
           onTap={!autoAdvance ? advance : undefined}
         />
       )}
