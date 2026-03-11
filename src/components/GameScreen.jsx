@@ -62,6 +62,9 @@ export function GameScreen({
   // Photo countdown (10s → opens map automatically)
   const [photoTimeLeft, setPhotoTimeLeft] = useState(PHOTO_TIMER_SECONDS);
 
+  // True only after the photo <img> fires onLoad — timer won't start before this
+  const [photoReady, setPhotoReady] = useState(false);
+
   // Swipe-up drag feedback
   const [dragY, setDragY] = useState(0);
 
@@ -102,30 +105,31 @@ export function GameScreen({
   }, [totalScore]);
 
   // Reset when a new country loads — all in one render-body batch so effects
-  // see photoTimeLeft=PHOTO_TIMER_SECONDS, not stale 0 from the previous round.
-  // Without this, the auto-open-map effect fires immediately on every second round.
+  // never see stale state from the previous round.
   const prevCountryId = useRef(country?.id);
   if (country?.id !== prevCountryId.current) {
     prevCountryId.current = country?.id;
     if (view !== "photo") setView("photo");
     if (dragY !== 0) setDragY(0);
     if (photoTimeLeft !== PHOTO_TIMER_SECONDS) setPhotoTimeLeft(PHOTO_TIMER_SECONDS);
+    if (photoReady) setPhotoReady(false);
   }
 
+  // Timer only starts once the photo image has actually loaded
   useEffect(() => {
-    if (!isPlaying || view !== "photo") return;
+    if (!isPlaying || view !== "photo" || !photoReady) return;
     const tid = setInterval(() => {
       setPhotoTimeLeft((t) => Math.max(0, t - 1));
     }, 1000);
     return () => clearInterval(tid);
-  }, [isPlaying, view, country?.id]);
+  }, [isPlaying, view, country?.id, photoReady]);
 
-  // Auto-open map when photo timer hits 0
+  // Auto-open map when photo timer hits 0 (photoReady guard prevents false triggers)
   useEffect(() => {
-    if (isPlaying && view === "photo" && photoTimeLeft === 0) {
+    if (isPlaying && view === "photo" && photoReady && photoTimeLeft === 0) {
       setView("map");
     }
-  }, [photoTimeLeft, isPlaying, view]);
+  }, [photoTimeLeft, isPlaying, view, photoReady]);
 
   // Auto-advance after reveal
   useEffect(() => {
@@ -202,14 +206,14 @@ export function GameScreen({
       >
         {/* Fullscreen photo */}
         <div className={styles.slideStack}>
-          <ReelSlide clue={country.clues[0]} />
+          <ReelSlide clue={country.clues[0]} onPhotoReady={() => setPhotoReady(true)} />
         </div>
 
         {/* HUD */}
         <div className={styles.hud}>
           <div className={styles.hudRow}>
-            {/* Photo countdown ring */}
-            {isPlaying && (
+            {/* Photo countdown ring — only shown after image loads */}
+            {isPlaying && photoReady && (
               <CountdownRing timeLeft={photoTimeLeft} />
             )}
             <div className={styles.hudRight}>

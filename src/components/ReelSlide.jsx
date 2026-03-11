@@ -1,11 +1,11 @@
 import { useState } from "react";
 import styles from "./ReelSlide.module.css";
 
-function PhotoSlide({ clue }) {
+function PhotoSlide({ clue, onPhotoReady }) {
   const [loaded, setLoaded] = useState(false);
   const hasUrl = !!clue.imageUrl;
 
-  // Reset loaded state when URL changes (e.g. Unsplash replaces fallback)
+  // Reset loaded state when URL changes (e.g. Unsplash replaces null placeholder)
   const [prevUrl, setPrevUrl] = useState(clue.imageUrl);
   if (clue.imageUrl !== prevUrl) {
     setPrevUrl(clue.imageUrl);
@@ -20,7 +20,10 @@ function PhotoSlide({ clue }) {
           src={clue.imageUrl}
           alt=""
           className={`${styles.photo} ${loaded ? styles.photoLoaded : ""}`}
-          onLoad={() => setLoaded(true)}
+          onLoad={() => {
+            setLoaded(true);
+            onPhotoReady?.();
+          }}
         />
       )}
       <div className={styles.photoGradientTop} />
@@ -76,10 +79,10 @@ function FlagSlide({ clue }) {
   );
 }
 
-export function ReelSlide({ clue }) {
+export function ReelSlide({ clue, onPhotoReady }) {
   return (
     <div className={styles.slide}>
-      {clue.type === "photo" && <PhotoSlide clue={clue} />}
+      {clue.type === "photo" && <PhotoSlide clue={clue} onPhotoReady={onPhotoReady} />}
       {clue.type === "fact" && <FactSlide clue={clue} />}
       {clue.type === "stat" && <StatSlide clue={clue} />}
       {clue.type === "flag" && <FlagSlide clue={clue} />}
