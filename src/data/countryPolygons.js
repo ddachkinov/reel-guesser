@@ -1,18 +1,35 @@
 import { feature } from "topojson-client";
 import worldAtlas from "world-atlas/countries-110m.json";
 
-// ISO 3166-1 numeric codes for our 10 countries
+// ISO 3166-1 numeric codes for all playable countries
 const ISO_BY_ID = {
-  japan:     "392",
-  brazil:    "76",
-  egypt:     "818",
-  norway:    "578",
-  india:     "356",
-  australia: "36",
-  mexico:    "484",
-  iceland:   "352",
-  peru:      "604",
-  morocco:   "504",
+  // Original 10
+  japan:        "392",
+  brazil:       "76",
+  egypt:        "818",
+  norway:       "578",
+  india:        "356",
+  australia:    "36",
+  mexico:       "484",
+  iceland:      "352",
+  peru:         "604",
+  morocco:      "504",
+  // Batch 2 — 15 more
+  thailand:     "764",
+  turkey:       "792",
+  greece:       "300",
+  kenya:        "404",
+  vietnam:      "704",
+  spain:        "724",
+  colombia:     "170",
+  newzealand:   "554",
+  southafrica:  "710",
+  france:       "250",
+  china:        "156",
+  nepal:        "524",
+  indonesia:    "360",
+  tanzania:     "834",
+  portugal:     "620",
 };
 
 // Pre-process once at module load — build { countryId → GeoJSON feature }
