@@ -292,7 +292,7 @@ export function GameScreen({
           distanceKm={lastDistanceKm}
           score={lastScore}
           insideCountry={lastGuessInsideCountry}
-          onTap={!autoAdvance ? advance : undefined}
+          onTap={advance}
         />
       )}
       {phase === PHASE.MILESTONE && (
