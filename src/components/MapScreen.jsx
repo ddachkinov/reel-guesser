@@ -40,15 +40,23 @@ function makeAnswerIcon(emoji) {
   });
 }
 
-function scoreColor(km, inside) {
+function scoreColor(km, inside, isCityRound) {
   if (inside) return "#34d399";
-  if (km < 500) return "#34d399";
-  if (km < 2000) return "#fbbf24";
+  const threshold = isCityRound ? [200, 800] : [500, 2000];
+  if (km < threshold[0]) return "#34d399";
+  if (km < threshold[1]) return "#fbbf24";
   return "#f87171";
 }
 
-function formatResult(km, inside) {
-  if (inside) return "Right country!";
+function formatResult(km, inside, isCityRound) {
+  if (isCityRound) {
+    if (inside)    return "Spot on!";
+    if (km < 200)  return `${km.toLocaleString()} km — Very close!`;
+    if (km < 800)  return `${km.toLocaleString()} km — Not bad`;
+    if (km < 3000) return `${km.toLocaleString()} km — Keep practising`;
+    return         `${km.toLocaleString()} km — Way off`;
+  }
+  if (inside)    return "Right country!";
   if (km < 500)  return `${km.toLocaleString()} km — So close!`;
   if (km < 2000) return `${km.toLocaleString()} km — Not bad`;
   if (km < 4000) return `${km.toLocaleString()} km — Keep practising`;
@@ -173,20 +181,23 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
       const { lat, lng } = e.latlng;
       const [ansLat, ansLng] = country.mapCenter;
       const km = Math.round(haversine(lat, lng, ansLat, ansLng));
-      const inside = isPointInCountry(lat, lng, country.id);
-      const color = scoreColor(km, inside);
+      const isCityRound = country.type === "city";
+      const inside = isCityRound
+        ? km <= 50
+        : isPointInCountry(lat, lng, country.id);
+      const color = scoreColor(km, inside, isCityRound);
 
       // Immediate: guess pin + hide chrome
       L.marker([lat, lng], { icon: makeGuessIcon(), zIndexOffset: 1000 }).addTo(map);
       setGuessed(true);
 
-      // 250ms: country polygon highlight + answer emoji + line + zoom
+      // 250ms: reveal answer — polygon for country rounds, just pin for city rounds
       setTimeout(() => {
-        addCountryLayer(map, country.id, inside);
+        if (!isCityRound) addCountryLayer(map, country.id, inside);
         L.marker([ansLat, ansLng], {
           icon: makeAnswerIcon(country.emoji), zIndexOffset: 2000,
         }).addTo(map);
-        // Only draw the connecting line when player missed the country
+        // Draw line only on misses (country: outside polygon, city: > 50 km)
         if (!inside) {
           L.polyline([[lat, lng], [ansLat, ansLng]], {
             color, weight: 2.5, dashArray: "8 5", opacity: 0.85,
@@ -199,7 +210,7 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
 
       // 1100ms: slide up result bar (after zoom settles)
       setTimeout(() => {
-        setResult({ km, color, text: formatResult(km, inside) });
+        setResult({ km, color, text: formatResult(km, inside, isCityRound) });
       }, 1100);
 
       // 1500ms: trigger scoring → BriefReveal

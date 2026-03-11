@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { getRandomCountry } from "../data/countries";
 import { fetchCountryPhoto } from "../utils/unsplash";
 import { isPointInCountry } from "../data/countryPolygons";
+import { getRandomCityRound } from "../data/cityRound";
 
 export const PHASE = {
   INTRO: "intro",
@@ -27,6 +28,11 @@ export function distanceFactor(km) {
 // Consolation multiplier for wrong-country guesses: capped at 40% of maxScore
 export function consolationFactor(km) {
   return Math.max(0, 1 - km / 5000) * 0.4;
+}
+
+// City round scoring: tighter window (0 at 3000 km vs 5000 for countries)
+export function cityScoringFactor(km) {
+  return Math.max(0, 1 - km / 3000);
 }
 
 export function haversine(lat1, lon1, lat2, lon2) {
@@ -63,6 +69,22 @@ export function useGameState() {
   });
 
   const _load = useCallback((excludeId) => {
+    // ~40% city rounds, ~60% country rounds
+    if (Math.random() < 0.4) {
+      // cities.json is preloaded in the background; this await is usually instant
+      getRandomCityRound().then((cityRound) => {
+        setCountry(cityRound);
+        setClueIndex(0);
+        setCluesViewed(1);
+        setPhase(PHASE.PLAYING);
+        setLastScore(null);
+        setLastDistanceKm(null);
+        setLastGuessInsideCountry(null);
+        setShowScorePop(false);
+      });
+      return;
+    }
+
     const c = getRandomCountry(excludeId);
     const fallbackUrl = c.clues[0]?.imageUrl;
     const fallbackAttr = c.clues[0]?.attribution;
@@ -119,12 +141,18 @@ export function useGameState() {
     if (!country) return;
     const [ansLat, ansLng] = country.mapCenter;
     const km = Math.round(haversine(guessLat, guessLng, ansLat, ansLng));
-    const inside = isPointInCountry(guessLat, guessLng, country.id);
     const maxS = calcMaxScore(cluesViewed);
-    // Inside the country = full points. Outside = distance-based consolation (max 40%).
-    const points = inside
-      ? maxS
-      : Math.round(maxS * consolationFactor(km));
+
+    let inside, points;
+    if (country.type === "city") {
+      // City rounds: pure distance-based, tighter window. "Inside" = within 50 km.
+      points = Math.round(maxS * cityScoringFactor(km));
+      inside = km <= 50;
+    } else {
+      // Country rounds: polygon wins; outside gets distance consolation (max 40%).
+      inside = isPointInCountry(guessLat, guessLng, country.id);
+      points = inside ? maxS : Math.round(maxS * consolationFactor(km));
+    }
 
     setLastScore(points);
     setLastDistanceKm(km);

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ReelSlide } from "./ReelSlide";
+import { CitySlide } from "./CitySlide";
 import { MapScreen } from "./MapScreen";
 import { ScorePop } from "./ScorePop";
 import { BriefReveal } from "./BriefReveal";
@@ -205,9 +206,12 @@ export function GameScreen({
           opacity: photoOpacity,
         }}
       >
-        {/* Fullscreen photo */}
+        {/* Fullscreen slide — photo for country rounds, text card for city rounds */}
         <div className={styles.slideStack}>
-          <ReelSlide clue={country.clues[0]} onPhotoReady={() => setPhotoReady(true)} />
+          {country.clues[0]?.type === "cityName"
+            ? <CitySlide clue={country.clues[0]} onPhotoReady={() => setPhotoReady(true)} />
+            : <ReelSlide clue={country.clues[0]} onPhotoReady={() => setPhotoReady(true)} />
+          }
         </div>
 
         {/* HUD */}

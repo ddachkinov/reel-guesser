@@ -1,17 +1,28 @@
 import { useState, useEffect } from "react";
 import styles from "./BriefReveal.module.css";
 
-function scoreColor(km, inside) {
-  if (km === null || km === undefined) return "#f87171"; // timeout = red
+function scoreColor(km, inside, isCityRound) {
+  if (km === null || km === undefined) return "#f87171";
   if (inside) return "#34d399";
+  if (isCityRound) {
+    if (km < 200) return "#34d399";
+    if (km < 800) return "#fbbf24";
+    return "#f87171";
+  }
   if (km < 500)  return "#34d399";
   if (km < 2000) return "#fbbf24";
   return "#f87171";
 }
 
-function scoreLabel(km, inside) {
+function scoreLabel(km, inside, isCityRound) {
   if (km === null) return "Time's up!";
-  if (inside) return "Right country!";
+  if (inside) return isCityRound ? "Spot on! 🎯" : "Right country!";
+  if (isCityRound) {
+    if (km < 200)  return "Very close!";
+    if (km < 800)  return "Not bad";
+    if (km < 3000) return "Keep going";
+    return "Way off";
+  }
   if (km < 500)  return "So close!";
   if (km < 2000) return "Not bad";
   if (km < 4000) return "Keep going";
@@ -37,8 +48,9 @@ function useCountUp(target, duration = 1200) {
 }
 
 export function BriefReveal({ country, distanceKm, score, insideCountry, onTap }) {
-  const color = scoreColor(distanceKm, insideCountry);
-  const label = scoreLabel(distanceKm, insideCountry);
+  const isCityRound = country.type === "city";
+  const color = scoreColor(distanceKm, insideCountry, isCityRound);
+  const label = scoreLabel(distanceKm, insideCountry, isCityRound);
   const timedOut = distanceKm === null;
 
   const animatedKm    = useCountUp(distanceKm ?? 0, 1200);
@@ -56,7 +68,9 @@ export function BriefReveal({ country, distanceKm, score, insideCountry, onTap }
       <div className={styles.card}>
         <span className={styles.emoji}>{country.emoji}</span>
         <h2 className={styles.name}>{country.answer}</h2>
-        <p className={styles.sub}>{country.capital} · {country.region}</p>
+        <p className={styles.sub}>
+          {isCityRound ? country.capital : `${country.capital} · ${country.region}`}
+        </p>
 
         <div className={styles.resultLabel} style={{ color }}>{label}</div>
 
@@ -67,7 +81,11 @@ export function BriefReveal({ country, distanceKm, score, insideCountry, onTap }
                 <span className={styles.metricValue} style={{ color: insideCountry ? "rgba(255,255,255,0.45)" : color }}>
                   {animatedKm.toLocaleString()}
                 </span>
-                <span className={styles.metricUnit}>{insideCountry ? "km from center" : "km off"}</span>
+                <span className={styles.metricUnit}>
+                  {insideCountry
+                    ? (isCityRound ? "km from city" : "km from center")
+                    : "km off"}
+                </span>
               </div>
               <div className={styles.divider} />
             </>
