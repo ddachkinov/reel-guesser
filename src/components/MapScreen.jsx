@@ -112,6 +112,7 @@ const MAP_TIMER_SECONDS = 10;
 export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visible }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const labelsLayerRef = useRef(null);
   const lockedRef = useRef(false);
   const [guessed, setGuessed] = useState(false);
   const [result, setResult] = useState(null);
@@ -169,7 +170,7 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
       { subdomains: "abcd", maxZoom: 19 }
     ).addTo(map);
 
-    L.tileLayer(
+    labelsLayerRef.current = L.tileLayer(
       `https://{s}.basemaps.cartocdn.com/${tileTheme}_only_labels/{z}/{x}/{y}{r}.png`,
       { subdomains: "abcd", maxZoom: 19, opacity: labelOpacity }
     ).addTo(map);
@@ -225,6 +226,14 @@ export function MapScreen({ country, maxScore, onScore, onBack, onTimeout, visib
       mapRef.current = null;
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Hide tile labels during city rounds so the city name isn't visible on the map
+  useEffect(() => {
+    if (!labelsLayerRef.current) return;
+    labelsLayerRef.current.setOpacity(
+      country?.type === "city" ? 0 : labelOpacity
+    );
+  }, [country?.type]);
 
   // Invalidate size on mount and whenever map becomes visible
   useEffect(() => {
