@@ -11,7 +11,7 @@ import { PHASE } from "../hooks/useGameState";
 import styles from "./GameScreen.module.css";
 
 const PHOTO_TIMER_SECONDS = 10;
-const AUTO_ADVANCE_DELAY = 5000;
+const AUTO_ADVANCE_DELAY = 3000;
 
 // Circular countdown ring — used in both photo and map views
 function CountdownRing({ timeLeft, maxTime = 10, size = 48 }) {

@@ -71,17 +71,16 @@ export function useGameState() {
   const _load = useCallback((excludeId) => {
     // ~40% city rounds, ~60% country rounds
     if (Math.random() < 0.4) {
-      // cities.json is preloaded in the background; this await is usually instant
-      getRandomCityRound().then((cityRound) => {
-        setCountry(cityRound);
-        setClueIndex(0);
-        setCluesViewed(1);
-        setPhase(PHASE.PLAYING);
-        setLastScore(null);
-        setLastDistanceKm(null);
-        setLastGuessInsideCountry(null);
-        setShowScorePop(false);
-      });
+      // Transition state synchronously so BriefReveal/overlay drops on the same frame as the tap.
+      // setCountry follows in the next microtask (cities.json is preloaded so it's instant).
+      setPhase(PHASE.PLAYING);
+      setClueIndex(0);
+      setCluesViewed(1);
+      setLastScore(null);
+      setLastDistanceKm(null);
+      setLastGuessInsideCountry(null);
+      setShowScorePop(false);
+      getRandomCityRound().then((cityRound) => setCountry(cityRound));
       return;
     }
 
